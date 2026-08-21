@@ -1,0 +1,3839 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/ C:\Projects\WoW\Bin\Interface\FrameXML\UI.xsd">
+	<!--
+	<Frame name="GHI_CreateItemsFrame" toplevel="true" frameStrata="DIALOG" movable="true" enableMouse="true" hidden="true" parent="UIParent">
+		<Size>
+		  <AbsDimension x="250" y="440" />
+		</Size>
+		<Anchors>
+		  <Anchor point="CENTER" relativePoint="CENTER">
+			<Offset>
+			  <AbsDimension x="0" y="0" />
+			</Offset>
+		  </Anchor>
+		</Anchors>
+		<Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background" edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
+		  <BackgroundInsets>
+			<AbsInset left="11" right="12" top="12" bottom="11" />
+		  </BackgroundInsets>
+		  <TileSize>
+			<AbsValue val="32" />
+		  </TileSize>
+		  <EdgeSize>
+			<AbsValue val="32" />
+		  </EdgeSize>
+		</Backdrop>
+		<Layers>
+		  <Layer>
+			<Texture name="$parentTitleBorder" hidden="false" file="Interface\DialogFrame\UI-DialogBox-Header">
+			  <Size>
+				<AbsDimension x="200" y="32" />
+			  </Size>
+			  <Anchors>
+				<Anchor point="TOP">
+				  <Offset>
+					<AbsDimension x="0" y="7" />
+				  </Offset>
+				</Anchor>
+			  </Anchors>
+			  <TexCoords left="0.2" right="0.8" top="0" bottom="0.6" />
+			</Texture>
+			<FontString name="$parentTitleString" hidden="false" font="Fonts\FRIZQT__.TTF" text="Create GHI Item">
+			  <Size>
+				<AbsDimension x="180" y="0" />
+			  </Size>
+			  <Anchors>
+				<Anchor point="TOP">
+				  <Offset>
+					<AbsDimension x="0" y="-4" />
+				  </Offset>
+				</Anchor>
+			  </Anchors>
+			  <FontHeight>
+				<AbsValue val="12" />
+			  </FontHeight>
+			  <Color r="1" g="0.8196079" b="0" />
+			  <Shadow>
+				<Color r="0" g="0" b="0" />
+				<Offset>
+				  <AbsDimension x="1" y="-1" />
+				</Offset>
+			  </Shadow>
+			</FontString>
+			
+  
+		  
+		  </Layer>
+		</Layers>
+		<Frames>
+			
+			
+			<EditBox name="$parentNamebox" hidden="false" letters="32" autoFocus="false" historyLines="10">
+				<Size>
+					<AbsDimension x="160" y="32"></AbsDimension>
+				</Size>
+				<Anchors>
+					<Anchor point="TOP" relativePoint="Top">
+						<Offset>
+							<AbsDimension x="0" y="-40"></AbsDimension>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Left">
+							<Size>
+								<AbsDimension x="95" y="32"></AbsDimension>
+							</Size>
+							<Anchors>
+								<Anchor point="TOPLEFT"  >
+									<Offset>
+										<AbsDimension x="-15" y="0" />
+									</Offset>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="0" right="0.2" top="0" bottom="1.0"></TexCoords>
+						</Texture>
+						<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Right">
+							<Size>
+								<AbsDimension x="95" y="32"></AbsDimension>
+							</Size>
+							<Anchors>
+								<Anchor point="RIGHT">
+									<Offset>
+										<AbsDimension x="15" y="0"></AbsDimension>
+									</Offset>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="0.7" right="1.0" top="0" bottom="1.0"></TexCoords>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnEscapePressed>
+						this:ClearFocus();
+					</OnEscapePressed>
+					<OnClick>
+						this:SetFocus();
+					</OnClick>
+					<OnEnterPressed>
+									
+					</OnEnterPressed>
+
+					<OnLoad></OnLoad>
+				</Scripts>
+				<FontString inherits="ChatFontNormal"></FontString>
+				<Frames>
+					<Frame name="$parentText">
+				       
+				        <Size>
+				          <AbsDimension x="100" y="20" />
+				        </Size>
+				        <Anchors>
+				          <Anchor point="BOTTOMLEFT"  relativePoint="TOPLEFT">
+				            <Offset>
+				              <AbsDimension x="0" y="-5" />
+				            </Offset>
+				          </Anchor>
+				        </Anchors>
+				        <Scripts>
+				          <OnClick>
+						  </OnClick>
+				        </Scripts>     
+						<Layers>
+				          <Layer>
+				            <FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Name:">
+				              <Anchors>
+				                <Anchor point="TOPLEFT" />
+				                <Anchor point="BOTTOMRIGHT" />
+				              </Anchors>
+				              <FontHeight>
+				                <AbsValue val="11" />
+				              </FontHeight>
+				              <Color r="1" g="0.8196079" b="0" />
+				              <Shadow>
+				                <Color r="0" g="0" b="0" />
+				                <Offset>
+				                  <AbsDimension x="1" y="-1" />
+				                </Offset>
+				              </Shadow>
+				            </FontString>
+				          </Layer>
+				        </Layers>
+				    </Frame>
+				</Frames>
+			</EditBox>
+			
+			<Frame name="$parentQuality" inherits="UIDropDownMenuTemplate" enableMouse="true" hidden="false">
+				
+				<Anchors>
+					<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentNamebox">
+						<Offset>
+							<AbsDimension x="-30" y="-20"></AbsDimension>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				
+				<Layers>
+					<Layer level="BACKGROUND">
+						<FontString name="$parentLabel" inherits="Fonts\FRIZQT__.TTF" text="Quality:" justifyH="LEFT">
+							<Anchors>
+								<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT">
+									<Offset>
+										<AbsDimension x="-20" y="0"/>
+									</Offset>
+								</Anchor>
+								
+							</Anchors>
+							<FontHeight>
+								<AbsValue val="11" />
+							</FontHeight>
+						</FontString>
+					</Layer>
+				</Layers>
+				<Scripts>
+                   <OnLoad>
+					   UIDropDownMenu_Initialize(this, GHI_QualityDD_Update);
+				   </OnLoad>
+			   
+				   <OnClick>
+					   GHI_QualityDD_OnClick;
+				   </OnClick>
+               </Scripts>
+				<Frames>
+					<Frame name="$parentText">
+						< !--<FrameSkin skinid="dcb143e1-a4ab-4e7c-b934-1efa40101d21" frameid="2d508885-59c2-4f83-ae10-27aaad48391b" />-- >
+						<Size>
+						  <AbsDimension x="100" y="14" />
+						</Size>						
+						<Anchors>
+						  <Anchor point="LEFT"  relativePoint="LEFT">
+							<Offset>
+							  <AbsDimension x="25" y="3" />
+							</Offset>
+						  </Anchor>
+						</Anchors>
+						<Scripts>
+						  <OnClick>
+						  </OnClick>
+						</Scripts>     
+						<Layers>
+						  <Layer>
+							<FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="|CFFFFFFFF Common|r">
+							  <Anchors>
+								<Anchor point="TOPLEFT" />
+								<Anchor point="BOTTOMRIGHT" />
+							  </Anchors>
+							  <FontHeight>
+								<AbsValue val="10" />
+							  </FontHeight>
+							  <Color r="1" g="1" b="1" />
+							  
+							</FontString>
+						  </Layer>
+						</Layers>
+					</Frame>	
+					
+				</Frames>
+			</Frame>
+			
+			<Button name="$parentIconButton" inherits="ItemButtonTemplate" hidden="false">
+				<Anchors>
+					<Anchor point="TOPRIGHT" relativePoint="BOTTOMRIGHT" relativeTo="$parentNamebox">
+						<Offset>
+							<AbsDimension x="10" y="-20"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Frames>
+					<Frame name="$parentText">
+				       
+				        <Size>
+				          <AbsDimension x="100" y="20" />
+				        </Size>
+				        <Anchors>
+				          <Anchor point="BOTTOMLEFT"  relativePoint="TOPLEFT">
+				            <Offset>
+				              <AbsDimension x="0" y="0" />
+				            </Offset>
+				          </Anchor>
+				        </Anchors>
+				        <Scripts>
+				          <OnClick>
+						  </OnClick>
+				        </Scripts>     
+						<Layers>
+				          <Layer>
+				            <FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Icon:">
+				              <Anchors>
+				                <Anchor point="TOPLEFT" />
+				                <Anchor point="BOTTOMRIGHT" />
+				              </Anchors>
+				              <FontHeight>
+				                <AbsValue val="11" />
+				              </FontHeight>
+				              <Color r="1" g="0.8196079" b="0" />
+				              <Shadow>
+				                <Color r="0" g="0" b="0" />
+				                <Offset>
+				                  <AbsDimension x="1" y="-1" />
+				                </Offset>
+				              </Shadow>
+				            </FontString>
+				          </Layer>
+				        </Layers>
+				    </Frame>
+				</Frames>
+				<Scripts>
+					<OnClick>
+						local frame = getglobal((this:GetParent()):GetName().."IconFrame");
+						frame.from = this;
+						frame:Show();
+					</OnClick>
+					<PostClick>
+						
+					</PostClick>
+					<OnLoad>
+						SetItemButtonTexture(this, "Interface\\Icons\\INV_Misc_QuestionMark");
+					</OnLoad>
+					<OnEnter>
+
+					</OnEnter>
+					<OnLeave>
+						
+					</OnLeave>
+					<OnHide>
+						
+					</OnHide>
+					<OnDragStart>
+						
+					</OnDragStart>
+					<OnReceiveDrag>
+						
+					</OnReceiveDrag>
+					<OnUpdate>
+						
+					</OnUpdate>
+					<OnEvent>
+						
+					</OnEvent>
+				</Scripts>
+			</Button>
+			
+			
+			<Frame name="$parentIconFrame" hidden="true">
+				<Size>
+				  <AbsDimension x="220" y="320" />
+				</Size>
+				<Anchors>
+				  <Anchor point="LEFT" relativePoint="RIGHT">
+					<Offset>
+					  <AbsDimension x="0" y="0" />
+					</Offset>
+				  </Anchor>
+				</Anchors>
+				<Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background" edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
+				  <BackgroundInsets>
+					<AbsInset left="11" right="12" top="12" bottom="11" />
+				  </BackgroundInsets>
+				  <TileSize>
+					<AbsValue val="32" />
+				  </TileSize>
+				  <EdgeSize>
+					<AbsValue val="32" />
+				  </EdgeSize>
+				</Backdrop>
+				<Layers>
+				  <Layer>
+					<Texture name="$parentTitleBorder" hidden="false" file="Interface\DialogFrame\UI-DialogBox-Header">
+					  <Size>
+						<AbsDimension x="160" y="32" />
+					  </Size>
+					  <Anchors>
+						<Anchor point="TOP">
+						  <Offset>
+							<AbsDimension x="0" y="7" />
+						  </Offset>
+						</Anchor>
+					  </Anchors>
+					  <TexCoords left="0.2" right="0.8" top="0" bottom="0.6" />
+					</Texture>
+					<FontString name="$parentTitleString" hidden="false" font="Fonts\FRIZQT__.TTF" text="Choose Icon">
+					  <Size>
+						<AbsDimension x="180" y="0" />
+					  </Size>
+					  <Anchors>
+						<Anchor point="TOP">
+						  <Offset>
+							<AbsDimension x="0" y="-4" />
+						  </Offset>
+						</Anchor>
+					  </Anchors>
+					  <FontHeight>
+						<AbsValue val="12" />
+					  </FontHeight>
+					  <Color r="1" g="0.8196079" b="0" />
+					  <Shadow>
+						<Color r="0" g="0" b="0" />
+						<Offset>
+						  <AbsDimension x="1" y="-1" />
+						</Offset>
+					  </Shadow>
+					</FontString>
+				
+
+				  
+				  
+				  </Layer>
+				</Layers>
+				<Frames>
+					
+					<Frame name="$parentCatagory" inherits="UIDropDownMenuTemplate" enableMouse="true" hidden="false">
+						
+						<Anchors>
+							<Anchor point="TOPLEFT" relativePoint="TOPLEFT">
+								<Offset>
+									<AbsDimension x="30" y="-35"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						
+						<Layers>
+							<Layer level="BACKGROUND">
+								<FontString name="$parentLabel" inherits="GameFontNormalSmall" text="Catagory:" justifyH="RIGHT">
+									<Anchors>
+										<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT">
+											<Offset>
+												<AbsDimension x="20" y="0"/>
+											</Offset>
+										</Anchor>
+										
+									</Anchors>
+									<FontHeight>
+										<AbsValue val="11" />
+									</FontHeight>
+								</FontString>
+							</Layer>
+						</Layers>
+						<Scripts>
+		                   <OnLoad>
+							   UIDropDownMenu_Initialize(this, GHI_CatagoryDD_Update);
+							   getglobal(this:GetName().."TextLabel"):SetText(GHI_IconCategories[1]);
+						   </OnLoad>
+					   
+						   <OnClick>
+							   GHI_CatagoryDD_OnClick;
+						   </OnClick>
+		               </Scripts>
+						<Frames>
+							<Frame name="$parentText">
+								< !--<FrameSkin skinid="dcb143e1-a4ab-4e7c-b934-1efa40101d21" frameid="2d508885-59c2-4f83-ae10-27aaad48391b" />-- >
+								<Size>
+								  <AbsDimension x="100" y="14" />
+								</Size>						
+								<Anchors>
+								  <Anchor point="LEFT"  relativePoint="LEFT">
+									<Offset>
+									  <AbsDimension x="25" y="3" />
+									</Offset>
+								  </Anchor>
+								</Anchors>
+								<Scripts>
+								  <OnClick>
+								  </OnClick>
+								</Scripts>     
+								<Layers>
+								  <Layer>
+									<FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="|CFFFFFFFF Common|r">
+									  <Anchors>
+										<Anchor point="TOPLEFT" />
+										<Anchor point="BOTTOMRIGHT" />
+									  </Anchors>
+									  <FontHeight>
+										<AbsValue val="10" />
+									  </FontHeight>
+									  <Color r="1" g="1" b="1" />
+									  
+									</FontString>
+								  </Layer>
+								</Layers>
+							</Frame>	
+							
+						</Frames>
+					</Frame>
+					
+					<Frame name="$parentSubcatagory" inherits="UIDropDownMenuTemplate" enableMouse="true" hidden="false">
+						
+						<Anchors>
+							<Anchor point="TOPLEFT" relativePoint="TOPLEFT">
+								<Offset>
+									<AbsDimension x="30" y="-80"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						
+						<Layers>
+							<Layer level="BACKGROUND">
+								<FontString name="$parentLabel" inherits="GameFontNormalSmall" text="Subcatagory:" justifyH="RIGHT">
+									<Anchors>
+										<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT">
+											<Offset>
+												<AbsDimension x="20" y="0"/>
+											</Offset>
+										</Anchor>
+										
+									</Anchors>
+									<FontHeight>
+										<AbsValue val="11" />
+									</FontHeight>
+								</FontString>
+							</Layer>
+						</Layers>
+						<Scripts>
+		                   <OnLoad>
+							   UIDropDownMenu_Initialize(this, GHI_SubcatagoryDD_Update);
+							   getglobal(this:GetName().."TextLabel"):SetText(GHI_IconSubcategories[GHI_IconCategories[1]][1]);
+						   </OnLoad>
+					   
+						   <OnClick>
+							   GHI_SubcatagoryDD_OnClick;
+						   </OnClick>
+		               </Scripts>
+						<Frames>
+							<Frame name="$parentText">
+								< !--<FrameSkin skinid="dcb143e1-a4ab-4e7c-b934-1efa40101d21" frameid="2d508885-59c2-4f83-ae10-27aaad48391b" />-- >
+								<Size>
+								  <AbsDimension x="100" y="14" />
+								</Size>						
+								<Anchors>
+								  <Anchor point="LEFT"  relativePoint="LEFT">
+									<Offset>
+									  <AbsDimension x="25" y="3" />
+									</Offset>
+								  </Anchor>
+								</Anchors>
+								<Scripts>
+								  <OnClick>
+								  </OnClick>
+								</Scripts>     
+								<Layers>
+								  <Layer>
+									<FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="2">
+									  <Anchors>
+										<Anchor point="TOPLEFT" />
+										<Anchor point="BOTTOMRIGHT" />
+									  </Anchors>
+									  <FontHeight>
+										<AbsValue val="10" />
+									  </FontHeight>
+									  <Color r="1" g="1" b="1" />
+									  
+									</FontString>
+								  </Layer>
+								</Layers>
+							</Frame>	
+							
+						</Frames>
+					</Frame>
+					
+					
+					<ScrollFrame name="$parentScrollBar" inherits="FauxScrollFrameTemplate">
+					    <Size>
+							<AbsDimension x="10" y="154"/>
+						</Size>
+						<Anchors>
+							<Anchor point="TOPRIGHT" relativePoint="TOPRIGHT">
+								<Offset>
+									<AbsDimension x="-45" y="-115"/>
+								</Offset>
+							</Anchor>
+						</Anchors>
+					    <Scripts>
+							<OnVerticalScroll>
+								FauxScrollFrame_OnVerticalScroll(16, GHI_IconScrollBar_Update); 
+							</OnVerticalScroll>
+							<OnShow>
+								GHI_IconScrollBar_Update()
+							</OnShow>
+					    </Scripts>
+					</ScrollFrame>
+					
+					<CheckButton name="GHI_PopupButton1" inherits="ItemButtonTemplate" id="1">
+						<Anchors>
+							<Anchor point="TOPLEFT">
+								<Offset>
+									<AbsDimension x="25" y="-115"/>
+								</Offset>
+							</Anchor>
+						</Anchors> <Scripts> <OnClick> GHI_IconButtonOnClick() </OnClick> </Scripts>
+					</CheckButton>
+					<CheckButton name="GHI_PopupButton2" inherits="ItemButtonTemplate" id="2">
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="GHI_PopupButton1" relativePoint="RIGHT">
+								<Offset>
+									<AbsDimension x="2" y="0"/>
+								</Offset>
+							</Anchor>
+						</Anchors> <Scripts> <OnClick> GHI_IconButtonOnClick() </OnClick> </Scripts>
+					</CheckButton>
+					<CheckButton name="GHI_PopupButton3" inherits="ItemButtonTemplate" id="3">
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="GHI_PopupButton2" relativePoint="RIGHT">
+								<Offset>
+									<AbsDimension x="2" y="0"/>
+								</Offset>
+							</Anchor>
+						</Anchors> <Scripts> <OnClick> GHI_IconButtonOnClick() </OnClick> </Scripts>
+					</CheckButton>
+					<CheckButton name="GHI_PopupButton4" inherits="ItemButtonTemplate" id="4">
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="GHI_PopupButton3" relativePoint="RIGHT">
+								<Offset>
+									<AbsDimension x="2" y="0"/>
+								</Offset>
+							</Anchor>
+						</Anchors> <Scripts> <OnClick> GHI_IconButtonOnClick() </OnClick> </Scripts>
+					</CheckButton>
+					<CheckButton name="GHI_PopupButton5" inherits="ItemButtonTemplate" id="5">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativeTo="GHI_PopupButton1" relativePoint="BOTTOMLEFT">
+								<Offset>
+									<AbsDimension x="0" y="-2"/>
+								</Offset>
+							</Anchor>
+						</Anchors> <Scripts> <OnClick> GHI_IconButtonOnClick() </OnClick> </Scripts>
+					</CheckButton>
+					<CheckButton name="GHI_PopupButton6" inherits="ItemButtonTemplate" id="6">
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="GHI_PopupButton5" relativePoint="RIGHT">
+								<Offset>
+									<AbsDimension x="2" y="0"/>
+								</Offset>
+							</Anchor>
+						</Anchors> <Scripts> <OnClick> GHI_IconButtonOnClick() </OnClick> </Scripts>
+					</CheckButton>
+					<CheckButton name="GHI_PopupButton7" inherits="ItemButtonTemplate" id="7">
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="GHI_PopupButton6" relativePoint="RIGHT">
+								<Offset>
+									<AbsDimension x="2" y="0"/>
+								</Offset>
+							</Anchor>
+						</Anchors> <Scripts> <OnClick> GHI_IconButtonOnClick() </OnClick> </Scripts>
+					</CheckButton>
+					<CheckButton name="GHI_PopupButton8" inherits="ItemButtonTemplate" id="8">
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="GHI_PopupButton7" relativePoint="RIGHT">
+								<Offset>
+									<AbsDimension x="2" y="0"/>
+								</Offset>
+							</Anchor>
+						</Anchors> <Scripts> <OnClick> GHI_IconButtonOnClick() </OnClick> </Scripts>
+					</CheckButton>
+					<CheckButton name="GHI_PopupButton9" inherits="ItemButtonTemplate" id="9">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativeTo="GHI_PopupButton5" relativePoint="BOTTOMLEFT">
+								<Offset>
+									<AbsDimension x="0" y="-2"/>
+								</Offset>
+							</Anchor>
+						</Anchors> <Scripts> <OnClick> GHI_IconButtonOnClick() </OnClick> </Scripts>
+					</CheckButton>
+					<CheckButton name="GHI_PopupButton10" inherits="ItemButtonTemplate" id="10">
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="GHI_PopupButton9" relativePoint="RIGHT">
+								<Offset>
+									<AbsDimension x="2" y="0"/>
+								</Offset>
+							</Anchor>
+						</Anchors> <Scripts> <OnClick> GHI_IconButtonOnClick() </OnClick> </Scripts>
+					</CheckButton>
+					<CheckButton name="GHI_PopupButton11" inherits="ItemButtonTemplate" id="11">
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="GHI_PopupButton10" relativePoint="RIGHT">
+								<Offset>
+									<AbsDimension x="2" y="0"/>
+								</Offset>
+							</Anchor>
+						</Anchors> <Scripts> <OnClick> GHI_IconButtonOnClick() </OnClick> </Scripts>
+					</CheckButton>
+					<CheckButton name="GHI_PopupButton12" inherits="ItemButtonTemplate" id="12">
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="GHI_PopupButton11" relativePoint="RIGHT">
+								<Offset>
+									<AbsDimension x="2" y="0"/>
+								</Offset>
+							</Anchor>
+						</Anchors> <Scripts> <OnClick> GHI_IconButtonOnClick() </OnClick> </Scripts>
+					</CheckButton>
+					<CheckButton name="GHI_PopupButton13" inherits="ItemButtonTemplate" id="13">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativeTo="GHI_PopupButton9" relativePoint="BOTTOMLEFT">
+								<Offset>
+									<AbsDimension x="0" y="-2"/>
+								</Offset>
+							</Anchor>
+						</Anchors> <Scripts> <OnClick> GHI_IconButtonOnClick() </OnClick> </Scripts>
+					</CheckButton>
+					<CheckButton name="GHI_PopupButton14" inherits="ItemButtonTemplate" id="14">
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="GHI_PopupButton13" relativePoint="RIGHT">
+								<Offset>
+									<AbsDimension x="2" y="0"/>
+								</Offset>
+							</Anchor>
+						</Anchors> <Scripts> <OnClick> GHI_IconButtonOnClick() </OnClick> </Scripts>
+					</CheckButton>
+					<CheckButton name="GHI_PopupButton15" inherits="ItemButtonTemplate" id="15">
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="GHI_PopupButton14" relativePoint="RIGHT">
+								<Offset>
+									<AbsDimension x="2" y="0"/>
+								</Offset>
+							</Anchor>
+						</Anchors> <Scripts> <OnClick> GHI_IconButtonOnClick() </OnClick> </Scripts>
+					</CheckButton>
+					<CheckButton name="GHI_PopupButton16" inherits="ItemButtonTemplate" id="16">
+						<Anchors>
+							<Anchor point="LEFT" relativeTo="GHI_PopupButton15" relativePoint="RIGHT">
+								<Offset>
+									<AbsDimension x="2" y="0"/>
+								</Offset>
+							</Anchor>
+						</Anchors> <Scripts> <OnClick> GHI_IconButtonOnClick() </OnClick> </Scripts>
+					</CheckButton>
+					
+					
+					
+					
+					<Button name="$parentClose" hidden="false" text="Close">		
+						<Size>
+						  <AbsDimension x="60" y="25" />
+						</Size>
+						<Anchors>
+						  <Anchor point="BOTTOM"  relativePoint="BOTTOM" >
+							<Offset>
+							  <AbsDimension x="0" y="15" />
+							</Offset>
+						  </Anchor>
+						</Anchors>
+						<Scripts>
+						  <OnClick>
+							this:GetParent():Hide();
+						  </OnClick>
+						</Scripts>
+						<NormalTexture file="Interface\Buttons\UI-Panel-Button-Up">
+						  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+						</NormalTexture>
+						<PushedTexture file="Interface\Buttons\UI-Panel-Button-Down">
+						  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+						</PushedTexture>
+						<DisabledTexture file="Interface\Buttons\UI-Panel-Button-Down">
+						  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+						</DisabledTexture>
+						<HighlightTexture file="Interface\Buttons\UI-Panel-Button-Highlight" alphaMode="ADD">
+						  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+						</HighlightTexture>
+						<ButtonText name="$parentText">
+						  <FontHeight>
+							<AbsValue val="10" />
+						  </FontHeight>
+						</ButtonText>
+						<NormalFont inherits="GameFontNormal" font="Fonts\FRIZQT__.TTF">
+						  <FontHeight>
+							<AbsValue val="12" />
+						  </FontHeight>
+						  <Color r="1" g="0.8196079" b="0" />
+						  <Shadow>
+							<Color r="0" g="0" b="0" />
+							<Offset>
+							  <AbsDimension x="1" y="-1" />
+							</Offset>
+						  </Shadow>
+						</NormalFont>
+						<HighlightFont inherits="GameFontHighlight" font="Fonts\FRIZQT__.TTF">
+						  <FontHeight>
+							<AbsValue val="12" />
+						  </FontHeight>
+						  <Color r="1" g="1" b="1" />
+						  <Shadow>
+							<Color r="0" g="0" b="0" />
+							<Offset>
+							  <AbsDimension x="1" y="-1" />
+							</Offset>
+						  </Shadow>
+						</HighlightFont>
+						<DisabledFont inherits="GameFontDisable" font="Fonts\FRIZQT__.TTF">
+						  <FontHeight>
+							<AbsValue val="12" />
+						  </FontHeight>
+						  <Color r="1" g="0.8196079" b="0" />
+						  <Shadow>
+							<Color r="0" g="0" b="0" />
+							<Offset>
+							  <AbsDimension x="1" y="-1" />
+							</Offset>
+						  </Shadow>
+						</DisabledFont>
+					</Button> 
+					
+					
+					
+					
+					
+					
+						
+			
+				
+				</Frames>
+
+			</Frame> 
+			
+			
+			
+			
+			<EditBox name="$parentWhite1box" hidden="false" letters="32" autoFocus="false" historyLines="10">
+				<Size>
+					<AbsDimension x="160" y="32"></AbsDimension>
+				</Size>
+				<Anchors>
+					<Anchor point="TOP" relativePoint="Top">
+						<Offset>
+							<AbsDimension x="0" y="-140"></AbsDimension>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Left">
+							<Size>
+								<AbsDimension x="95" y="32"></AbsDimension>
+							</Size>
+							<Anchors>
+								<Anchor point="TOPLEFT"  >
+									<Offset>
+										<AbsDimension x="-15" y="0" />
+									</Offset>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="0" right="0.2" top="0" bottom="1.0"></TexCoords>
+						</Texture>
+						<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Right">
+							<Size>
+								<AbsDimension x="95" y="32"></AbsDimension>
+							</Size>
+							<Anchors>
+								<Anchor point="RIGHT">
+									<Offset>
+										<AbsDimension x="15" y="0"></AbsDimension>
+									</Offset>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="0.7" right="1.0" top="0" bottom="1.0"></TexCoords>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnEscapePressed>
+						this:ClearFocus();
+					</OnEscapePressed>
+					<OnClick>
+						this:SetFocus();
+					</OnClick>
+					<OnEnterPressed>
+									
+					</OnEnterPressed>
+
+					<OnLoad></OnLoad>
+				</Scripts>
+				<FontString inherits="ChatFontNormal"></FontString>
+				<Frames>
+					<Frame name="$parentText">
+				        < !--<FrameSkin skinid="dcb143e1-a4ab-4e7c-b934-1efa40101d21" frameid="2d508885-59c2-4f83-ae10-27aaad48391b" />-- >
+				        <Size>
+				          <AbsDimension x="100" y="20" />
+				        </Size>
+				        <Anchors>
+				          <Anchor point="BOTTOMLEFT"  relativePoint="TOPLEFT">
+				            <Offset>
+				              <AbsDimension x="0" y="-5" />
+				            </Offset>
+				          </Anchor>
+				        </Anchors>
+				        <Scripts>
+				          <OnClick>
+						  </OnClick>
+				        </Scripts>     
+						<Layers>
+				          <Layer>
+				            <FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="White text 1:">
+				              <Anchors>
+				                <Anchor point="TOPLEFT" />
+				                <Anchor point="BOTTOMRIGHT" />
+				              </Anchors>
+				              <FontHeight>
+				                <AbsValue val="11" />
+				              </FontHeight>
+				              <Color r="1" g="0.8196079" b="0" />
+				              <Shadow>
+				                <Color r="0" g="0" b="0" />
+				                <Offset>
+				                  <AbsDimension x="1" y="-1" />
+				                </Offset>
+				              </Shadow>
+				            </FontString>
+				          </Layer>
+				        </Layers>
+				    </Frame>
+				</Frames>
+			</EditBox>
+			
+			<EditBox name="$parentWhite2box" hidden="false" letters="32" autoFocus="false" historyLines="10">
+				<Size>
+					<AbsDimension x="160" y="32"></AbsDimension>
+				</Size>
+				<Anchors>
+					<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentWhite1box" >
+						<Offset>
+							<AbsDimension x="0" y="-15"></AbsDimension>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Left">
+							<Size>
+								<AbsDimension x="95" y="32"></AbsDimension>
+							</Size>
+							<Anchors>
+								<Anchor point="TOPLEFT"  >
+									<Offset>
+										<AbsDimension x="-15" y="0" />
+									</Offset>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="0" right="0.2" top="0" bottom="1.0"></TexCoords>
+						</Texture>
+						<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Right">
+							<Size>
+								<AbsDimension x="95" y="32"></AbsDimension>
+							</Size>
+							<Anchors>
+								<Anchor point="RIGHT">
+									<Offset>
+										<AbsDimension x="15" y="0"></AbsDimension>
+									</Offset>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="0.7" right="1.0" top="0" bottom="1.0"></TexCoords>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnEscapePressed>
+						this:ClearFocus();
+					</OnEscapePressed>
+					<OnClick>
+						this:SetFocus();
+					</OnClick>
+					<OnEnterPressed>
+									
+					</OnEnterPressed>
+
+					<OnLoad></OnLoad>
+				</Scripts>
+				<FontString inherits="ChatFontNormal"></FontString>
+				<Frames>
+					<Frame name="$parentText">
+				        < !--<FrameSkin skinid="dcb143e1-a4ab-4e7c-b934-1efa40101d21" frameid="2d508885-59c2-4f83-ae10-27aaad48391b" />-- >
+				        <Size>
+				          <AbsDimension x="100" y="20" />
+				        </Size>
+				        <Anchors>
+				          <Anchor point="BOTTOMLEFT"  relativePoint="TOPLEFT">
+				            <Offset>
+				              <AbsDimension x="0" y="-5" />
+				            </Offset>
+				          </Anchor>
+				        </Anchors>
+				        <Scripts>
+				          <OnClick>
+						  </OnClick>
+				        </Scripts>     
+						<Layers>
+				          <Layer>
+				            <FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="White text 2:">
+				              <Anchors>
+				                <Anchor point="TOPLEFT" />
+				                <Anchor point="BOTTOMRIGHT" />
+				              </Anchors>
+				              <FontHeight>
+				                <AbsValue val="11" />
+				              </FontHeight>
+				              <Color r="1" g="0.8196079" b="0" />
+				              <Shadow>
+				                <Color r="0" g="0" b="0" />
+				                <Offset>
+				                  <AbsDimension x="1" y="-1" />
+				                </Offset>
+				              </Shadow>
+				            </FontString>
+				          </Layer>
+				        </Layers>
+				    </Frame>
+				</Frames>
+			</EditBox>
+			
+			
+			<EditBox name="$parentCommentbox" hidden="false" letters="64" autoFocus="false" historyLines="10">
+				<Size>
+					<AbsDimension x="160" y="32"></AbsDimension>
+				</Size>
+				<Anchors>
+					<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentWhite2box" >
+						<Offset>
+							<AbsDimension x="0" y="-15"></AbsDimension>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Left">
+							<Size>
+								<AbsDimension x="95" y="32"></AbsDimension>
+							</Size>
+							<Anchors>
+								<Anchor point="TOPLEFT"  >
+									<Offset>
+										<AbsDimension x="-15" y="0" />
+									</Offset>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="0" right="0.2" top="0" bottom="1.0"></TexCoords>
+						</Texture>
+						<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Right">
+							<Size>
+								<AbsDimension x="95" y="32"></AbsDimension>
+							</Size>
+							<Anchors>
+								<Anchor point="RIGHT">
+									<Offset>
+										<AbsDimension x="15" y="0"></AbsDimension>
+									</Offset>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="0.7" right="1.0" top="0" bottom="1.0"></TexCoords>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnEscapePressed>
+						this:ClearFocus();
+					</OnEscapePressed>
+					<OnClick>
+						this:SetFocus();
+					</OnClick>
+					<OnEnterPressed>
+									
+					</OnEnterPressed>
+
+					<OnLoad></OnLoad>
+				</Scripts>
+				<FontString inherits="ChatFontNormal"></FontString>
+				<Frames>
+					<Frame name="$parentText">
+				        < !--<FrameSkin skinid="dcb143e1-a4ab-4e7c-b934-1efa40101d21" frameid="2d508885-59c2-4f83-ae10-27aaad48391b" />-- >
+				        <Size>
+				          <AbsDimension x="100" y="20" />
+				        </Size>
+				        <Anchors>
+				          <Anchor point="BOTTOMLEFT"  relativePoint="TOPLEFT">
+				            <Offset>
+				              <AbsDimension x="0" y="-5" />
+				            </Offset>
+				          </Anchor>
+				        </Anchors>
+				        <Scripts>
+				          <OnClick>
+						  </OnClick>
+				        </Scripts>     
+						<Layers>
+				          <Layer>
+				            <FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Yellow Quote:">
+				              <Anchors>
+				                <Anchor point="TOPLEFT" />
+				                <Anchor point="BOTTOMRIGHT" />
+				              </Anchors>
+				              <FontHeight>
+				                <AbsValue val="11" />
+				              </FontHeight>
+				              <Color r="1" g="0.8196079" b="0" />
+				              <Shadow>
+				                <Color r="0" g="0" b="0" />
+				                <Offset>
+				                  <AbsDimension x="1" y="-1" />
+				                </Offset>
+				              </Shadow>
+				            </FontString>
+				          </Layer>
+				        </Layers>
+				    </Frame>
+				</Frames>
+			</EditBox>
+			
+			<EditBox name="$parentAmountbox" hidden="false" letters="3" autoFocus="false" numeric="true">
+				<Size>
+					<AbsDimension x="40" y="32"></AbsDimension>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentCommentbox">
+						<Offset>
+							<AbsDimension x="0" y="-15"></AbsDimension>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Left">
+							<Size>
+								<AbsDimension x="50" y="32"></AbsDimension>
+							</Size>
+							<Anchors>
+								<Anchor point="TOPLEFT"  >
+									<Offset>
+										<AbsDimension x="-10" y="0" />
+									</Offset>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="0" right="0.2" top="0" bottom="1.0"></TexCoords>
+						</Texture>
+						<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Right">
+							<Size>
+								<AbsDimension x="50" y="32"></AbsDimension>
+							</Size>
+							<Anchors>
+								<Anchor point="RIGHT">
+									<Offset>
+										<AbsDimension x="10" y="0"></AbsDimension>
+									</Offset>
+								</Anchor>
+							</Anchors>
+							<TexCoords left="0.7" right="1.0" top="0" bottom="1.0"></TexCoords>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnLoad>
+						this:SetText(1);
+					</OnLoad>
+					<OnEscapePressed>
+						this:ClearFocus();
+					</OnEscapePressed>
+					<OnClick>
+						this:SetFocus();
+					</OnClick>
+					<OnEnterPressed>
+									
+					</OnEnterPressed>
+				</Scripts>
+				<FontString inherits="ChatFontNormal"></FontString>
+				<Frames>
+					<Frame name="$parentText">
+				        < !--<FrameSkin skinid="dcb143e1-a4ab-4e7c-b934-1efa40101d21" frameid="2d508885-59c2-4f83-ae10-27aaad48391b" />-- >
+				        <Size>
+				          <AbsDimension x="100" y="20" />
+				        </Size>
+				        <Anchors>
+				          <Anchor point="BOTTOMLEFT"  relativePoint="TOPLEFT">
+				            <Offset>
+				              <AbsDimension x="0" y="-5" />
+				            </Offset>
+				          </Anchor>
+				        </Anchors>
+				        <Scripts>
+				          <OnClick>
+						  </OnClick>
+				        </Scripts>     
+						<Layers>
+				          <Layer>
+				            <FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Amount:">
+				              <Anchors>
+				                <Anchor point="TOPLEFT" />
+				                <Anchor point="BOTTOMRIGHT" />
+				              </Anchors>
+				              <FontHeight>
+				                <AbsValue val="11" />
+				              </FontHeight>
+				              <Color r="1" g="0.8196079" b="0" />
+				              <Shadow>
+				                <Color r="0" g="0" b="0" />
+				                <Offset>
+				                  <AbsDimension x="1" y="-1" />
+				                </Offset>
+				              </Shadow>
+				            </FontString>
+				          </Layer>
+				        </Layers>
+				    </Frame>
+				</Frames>
+			</EditBox>
+			
+			<Slider name="$parentStackSlider" minValue="1" maxValue="6" defaultValue="1" valueStep="1" orientation="Horizontal">
+		        < !--<FrameSkin skinid="f15d4970-d66d-444e-bb2d-1ad102c87fed" frameid="f15d4976-d66d-444e-bb2d-1ad102c87fed" />-- >
+		        <Size>
+		          <AbsDimension x="80" y="20" />
+		        </Size>
+				<Anchors>
+					<Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parentAmountbox">
+						<Offset>
+							<AbsDimension x="50" y="0"></AbsDimension>
+						</Offset>
+					</Anchor>
+				</Anchors>
+		        <Scripts>
+				    <OnLoad>
+						
+					</OnLoad>
+					<OnValueChanged> 
+
+						GHI_StackSliderValues = {1,5,10,20,50,100}
+						this.amount = GHI_StackSliderValues[this:GetValue()];
+						getglobal(this:GetName().."Label2"):SetText(this.amount)										
+					</OnValueChanged>
+				</Scripts>
+				<Layers>
+				  <Layer>
+					<FontString name="$parentLabel1" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Stack size:">
+					  <Anchors>
+						<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT" >
+							<Offset>
+								<AbsDimension x="5" y="0"></AbsDimension>
+							</Offset>
+						</Anchor>
+						
+					  </Anchors>
+					  <FontHeight>
+						<AbsValue val="10" />
+					  </FontHeight>
+					  <Color r="1" g="0.8196079" b="0" />
+					</FontString>
+					<FontString name="$parentLabel2" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="1">
+					  <Anchors>
+						<Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" >
+							<Offset>
+								<AbsDimension x="-5" y="0"></AbsDimension>
+							</Offset>
+						</Anchor>
+						
+					  </Anchors>
+					  <FontHeight>
+						<AbsValue val="10" />
+					  </FontHeight>
+					  <Color r="1" g="0.8196079" b="0" />
+					</FontString>
+				  </Layer>
+				</Layers>
+
+				<Backdrop bgFile="Interface\Buttons\UI-SliderBar-Background" edgeFile="Interface\Buttons\UI-SliderBar-Border" tile="false">
+		          <BackgroundInsets>
+		            <AbsInset left="20" right="20" top="20" bottom="20" />
+		          </BackgroundInsets>
+		          <TileSize>
+		            <AbsValue val="8" />
+		          </TileSize>
+		          <EdgeSize>
+		            <AbsValue val="8" />
+		          </EdgeSize>
+		        </Backdrop>
+		        <HitRectInsets>
+		          <AbsInset left="10" right="0" top="0" bottom="0" />
+		        </HitRectInsets>
+		        <ThumbTexture name="$parentThumb" file="Interface\Buttons\UI-SliderBar-Button-Horizontal">
+		          <Size>
+		            <AbsDimension x="32" y="32" />
+		          </Size>
+		        </ThumbTexture>
+		        
+				
+			</Slider>
+			
+			<CheckButton name="$parentCheck1" inherits="OptionsCheckButtonTemplate" checked="true" hidden="false">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentAmountbox" >
+						<Offset>
+							<AbsDimension x="-10" y="0"></AbsDimension>
+						</Offset>
+					</Anchor>
+				</Anchors>   
+				
+				<Scripts>
+					<OnClick> 
+						
+						
+					</OnClick>		
+				</Scripts>
+				<FontString inherits="ChatFontNormal"></FontString>
+				<Frames>
+					<Frame name="$parentText">
+						<Size>
+						  <AbsDimension x="200" y="30" />
+						</Size>
+						<Anchors>
+						  <Anchor point="LEFT"  relativePoint="RIGHT">
+							<Offset>
+							  <AbsDimension x="0" y="0" />
+							</Offset>
+						  </Anchor>
+						</Anchors>
+						<Scripts>
+						  <OnClick>
+						  </OnClick>
+						</Scripts>     
+						<Layers>
+						  <Layer>
+							<FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Copyable by others">
+							  <Size>
+						<AbsDimension x="140" y="30" />
+					  </Size>
+					  <FontHeight>
+							<AbsValue val="11" />
+							  </FontHeight>
+							  <Color r="1" g="0.8196079" b="0" />
+							  <Shadow>
+								<Color r="0" g="0" b="0" />
+								<Offset>
+								  <AbsDimension x="1" y="-1" />
+								</Offset>
+							  </Shadow>
+							</FontString>
+						  </Layer>
+						</Layers>
+					</Frame>
+				</Frames>
+			</CheckButton>
+					
+			
+			< !--
+			<CheckButton name="$parentCheck1" inherits="OptionsCheckButtonTemplate" checked="true" hidden="false">
+				<Anchors>
+					<Anchor point="TOP" relativePoint="TOP">
+						<Offset>
+							<AbsDimension x="-75" y="-280"></AbsDimension>
+						</Offset>
+					</Anchor>
+				</Anchors>   
+				
+				<Scripts>
+					<OnClick> 
+						if (this:GetChecked() == nil) then
+							GHR_Options["AutoJoin"] = false;				
+						else
+							GHR_Options["AutoJoin"] = true;	
+							GHR_EmptyComCatche();
+						end
+						
+					</OnClick>		
+				</Scripts>
+				<FontString inherits="ChatFontNormal"></FontString>
+				<Frames>
+					<Frame name="$parentText">
+				        <Size>
+				          <AbsDimension x="200" y="30" />
+				        </Size>
+				        <Anchors>
+				          <Anchor point="LEFT"  relativePoint="RIGHT">
+				            <Offset>
+				              <AbsDimension x="0" y="0" />
+				            </Offset>
+				          </Anchor>
+				        </Anchors>
+				        <Scripts>
+				          <OnClick>
+						  </OnClick>
+				        </Scripts>     
+						<Layers>
+				          <Layer>
+				            <FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Right click action">
+				              <Size>
+					    <AbsDimension x="140" y="30" />
+					  </Size>
+					  <FontHeight>
+				                <AbsValue val="11" />
+				              </FontHeight>
+				              <Color r="1" g="0.8196079" b="0" />
+				              <Shadow>
+				                <Color r="0" g="0" b="0" />
+				                <Offset>
+				                  <AbsDimension x="1" y="-1" />
+				                </Offset>
+				              </Shadow>
+				            </FontString>
+				          </Layer>
+				        </Layers>
+				    </Frame>
+				</Frames>
+			</CheckButton>
+			-- >
+			
+			<Frame name="$parentRClick" inherits="UIDropDownMenuTemplate" enableMouse="true" hidden="false">
+				
+				<Anchors>
+					<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentCheck1">
+						<Offset>
+							<AbsDimension x="0" y="-10"></AbsDimension>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<FontString name="$parentLabel" inherits="GameFontNormalSmall" text="Right click action:" justifyH="RIGHT">
+							<Anchors>
+								<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT">
+									<Offset>
+										<AbsDimension x="20" y="0"/>
+									</Offset>
+								</Anchor>
+								
+							</Anchors>
+							<FontHeight>
+								<AbsValue val="11" />
+							</FontHeight>
+						</FontString>
+					</Layer>
+				</Layers>
+				<Scripts>
+                   <OnLoad>
+					   UIDropDownMenu_Initialize(this, GHI_RClickDD_Update);
+				   </OnLoad>
+			   
+				   <OnClick>
+					   GHI_RClickDD_OnClick;
+				   </OnClick>
+               </Scripts>
+				<Frames>
+					<Frame name="$parentText">
+						< !--<FrameSkin skinid="dcb143e1-a4ab-4e7c-b934-1efa40101d21" frameid="2d508885-59c2-4f83-ae10-27aaad48391b" />-- >
+						<Size>
+						  <AbsDimension x="100" y="14" />
+						</Size>						
+						<Anchors>
+						  <Anchor point="LEFT"  relativePoint="LEFT">
+							<Offset>
+							  <AbsDimension x="25" y="3" />
+							</Offset>
+						  </Anchor>
+						</Anchors>
+						<Scripts>
+						  <OnClick>
+						  </OnClick>
+						</Scripts>     
+						<Layers>
+						  <Layer>
+							<FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="none">
+							  <Anchors>
+								<Anchor point="TOPLEFT" />
+								<Anchor point="BOTTOMRIGHT" />
+							  </Anchors>
+							  <FontHeight>
+								<AbsValue val="10" />
+							  </FontHeight>
+							  <Color r="1" g="1" b="1" />
+							  
+							</FontString>
+						  </Layer>
+						</Layers>
+					</Frame>	
+					<Frame name="$parentHelptext">
+						< !--<FrameSkin skinid="dcb143e1-a4ab-4e7c-b934-1efa40101d21" frameid="2d508885-59c2-4f83-ae10-27aaad48391b" />-- >
+						<Size>
+						  <AbsDimension x="10" y="14" />
+						</Size>						
+						<Anchors>
+						  <Anchor point="LEFT"  relativePoint="Right">
+							<Offset>
+							  <AbsDimension x="115" y="3" />
+							</Offset>
+						  </Anchor>
+						</Anchors>
+						<Scripts>
+						  <OnEnter>
+							GHI_ShowRightClickHelp()
+						  </OnEnter>
+						  <OnLeave>
+							GameTooltip:Hide();
+						  </OnLeave>
+						</Scripts>     
+						<Layers>
+						  <Layer>
+							<FontString name="$parentLabel" inherits="GameFontNormalLarge" justifyH="LEFT" text="?">
+							  <Anchors>
+								<Anchor point="TOPLEFT" />
+								<Anchor point="BOTTOMRIGHT" />
+							  </Anchors>
+							  <FontHeight>
+								<AbsValue val="20" />
+							  </FontHeight>
+							  
+							</FontString>
+						  </Layer>
+						</Layers>
+					</Frame>
+				</Frames>
+			</Frame>
+			
+			<Frame name="$parentRclickError" hidden="true">
+				<Frames>
+					
+					<Frame name="$parentText">
+					   
+						<Size>
+						  <AbsDimension x="160" y="80" />
+						</Size>
+						<Anchors>
+							<Anchor point="TOP" relativePoint="Top" relativeTo="GHI_CreateItemsFrameCommentbox">
+								<Offset>
+									<AbsDimension x="0" y="-140"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Scripts>
+						  <OnClick>
+						  </OnClick>
+						</Scripts>     
+						<Layers>
+						  <Layer>
+							<FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Use:">
+							  <Anchors>
+								<Anchor point="TOPLEFT" />
+								<Anchor point="BOTTOMRIGHT" />
+							  </Anchors>
+							  <FontHeight>
+								<AbsValue val="11" />
+							  </FontHeight>
+							  <Color r="1" g="0.8196079" b="0" />
+							  <Shadow>
+								<Color r="0" g="0" b="0" />
+								<Offset>
+								  <AbsDimension x="1" y="-1" />
+								</Offset>
+							  </Shadow>
+							</FontString>
+						  </Layer>
+						</Layers>
+					</Frame>
+						
+								
+					
+				</Frames>
+			</Frame>
+			
+			
+			
+			<Frame name="$parentBuff" hidden="true">
+				<Frames>
+					<EditBox name="$parentUsebox" hidden="false" letters="64" autoFocus="false">
+						<Size>
+							<AbsDimension x="160" y="32"></AbsDimension>
+						</Size>
+						<Anchors>
+							<Anchor point="TOP" relativePoint="Top" relativeTo="GHI_CreateItemsFrameCommentbox">
+								<Offset>
+									<AbsDimension x="0" y="-170"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Layers>
+							<Layer level="BACKGROUND">
+								<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Left">
+									<Size>
+										<AbsDimension x="95" y="32"></AbsDimension>
+									</Size>
+									<Anchors>
+										<Anchor point="TOPLEFT"  >
+											<Offset>
+												<AbsDimension x="-15" y="0" />
+											</Offset>
+										</Anchor>
+									</Anchors>
+									<TexCoords left="0" right="0.2" top="0" bottom="1.0"></TexCoords>
+								</Texture>
+								<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Right">
+									<Size>
+										<AbsDimension x="95" y="32"></AbsDimension>
+									</Size>
+									<Anchors>
+										<Anchor point="RIGHT">
+											<Offset>
+												<AbsDimension x="15" y="0"></AbsDimension>
+											</Offset>
+										</Anchor>
+									</Anchors>
+									<TexCoords left="0.7" right="1.0" top="0" bottom="1.0"></TexCoords>
+								</Texture>
+							</Layer>
+						</Layers>
+						<Scripts>
+							<OnEscapePressed>
+								this:ClearFocus();
+							</OnEscapePressed>
+							<OnClick>
+								this:SetFocus();
+							</OnClick>
+							<OnEnterPressed>
+											
+							</OnEnterPressed>
+
+							<OnLoad></OnLoad>
+						</Scripts>
+						<FontString inherits="ChatFontNormal"></FontString>
+						<Frames>
+							<Frame name="$parentText">
+						       
+						        <Size>
+						          <AbsDimension x="100" y="20" />
+						        </Size>
+						        <Anchors>
+						          <Anchor point="BOTTOMLEFT"  relativePoint="TOPLEFT">
+						            <Offset>
+						              <AbsDimension x="0" y="-5" />
+						            </Offset>
+						          </Anchor>
+						        </Anchors>
+						        <Scripts>
+						          <OnClick>
+								  </OnClick>
+						        </Scripts>     
+								<Layers>
+						          <Layer>
+						            <FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Use:">
+						              <Anchors>
+						                <Anchor point="TOPLEFT" />
+						                <Anchor point="BOTTOMRIGHT" />
+						              </Anchors>
+						              <FontHeight>
+						                <AbsValue val="11" />
+						              </FontHeight>
+						              <Color r="1" g="0.8196079" b="0" />
+						              <Shadow>
+						                <Color r="0" g="0" b="0" />
+						                <Offset>
+						                  <AbsDimension x="1" y="-1" />
+						                </Offset>
+						              </Shadow>
+						            </FontString>
+						          </Layer>
+						        </Layers>
+						    </Frame>
+						</Frames>
+					</EditBox>
+					
+					<EditBox name="$parentNamebox" hidden="false" letters="30" autoFocus="false">
+						<Size>
+							<AbsDimension x="160" y="32"></AbsDimension>
+						</Size>
+						<Anchors>
+							<Anchor point="TOP" relativePoint="Top" relativeTo="$parentUsebox">
+								<Offset>
+									<AbsDimension x="0" y="-40"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Layers>
+							<Layer level="BACKGROUND">
+								<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Left">
+									<Size>
+										<AbsDimension x="95" y="32"></AbsDimension>
+									</Size>
+									<Anchors>
+										<Anchor point="TOPLEFT"  >
+											<Offset>
+												<AbsDimension x="-15" y="0" />
+											</Offset>
+										</Anchor>
+									</Anchors>
+									<TexCoords left="0" right="0.2" top="0" bottom="1.0"></TexCoords>
+								</Texture>
+								<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Right">
+									<Size>
+										<AbsDimension x="95" y="32"></AbsDimension>
+									</Size>
+									<Anchors>
+										<Anchor point="RIGHT">
+											<Offset>
+												<AbsDimension x="15" y="0"></AbsDimension>
+											</Offset>
+										</Anchor>
+									</Anchors>
+									<TexCoords left="0.7" right="1.0" top="0" bottom="1.0"></TexCoords>
+								</Texture>
+							</Layer>
+						</Layers>
+						<Scripts>
+							<OnEscapePressed>
+								this:ClearFocus();
+							</OnEscapePressed>
+							<OnClick>
+								this:SetFocus();
+							</OnClick>
+							<OnEnterPressed>
+											
+							</OnEnterPressed>
+
+							<OnLoad></OnLoad>
+						</Scripts>
+						<FontString inherits="ChatFontNormal"></FontString>
+						<Frames>
+							<Frame name="$parentText">
+						       
+						        <Size>
+						          <AbsDimension x="100" y="20" />
+						        </Size>
+						        <Anchors>
+						          <Anchor point="BOTTOMLEFT"  relativePoint="TOPLEFT">
+						            <Offset>
+						              <AbsDimension x="0" y="-5" />
+						            </Offset>
+						          </Anchor>
+						        </Anchors>
+						        <Scripts>
+						          <OnClick>
+								  </OnClick>
+						        </Scripts>     
+								<Layers>
+						          <Layer>
+						            <FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Buff name:">
+						              <Anchors>
+						                <Anchor point="TOPLEFT" />
+						                <Anchor point="BOTTOMRIGHT" />
+						              </Anchors>
+						              <FontHeight>
+						                <AbsValue val="11" />
+						              </FontHeight>
+						              <Color r="1" g="0.8196079" b="0" />
+						              <Shadow>
+						                <Color r="0" g="0" b="0" />
+						                <Offset>
+						                  <AbsDimension x="1" y="-1" />
+						                </Offset>
+						              </Shadow>
+						            </FontString>
+						          </Layer>
+						        </Layers>
+						    </Frame>
+						</Frames>
+					</EditBox>
+			
+					
+					<EditBox name="$parentDetailsbox" hidden="false" letters="90" autoFocus="false">
+						<Size>
+							<AbsDimension x="160" y="32"></AbsDimension>
+						</Size>
+						<Anchors>
+							<Anchor point="TOP" relativePoint="Top" relativeTo="$parentNamebox">
+								<Offset>
+									<AbsDimension x="0" y="-40"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Layers>
+							<Layer level="BACKGROUND">
+								<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Left">
+									<Size>
+										<AbsDimension x="95" y="32"></AbsDimension>
+									</Size>
+									<Anchors>
+										<Anchor point="TOPLEFT"  >
+											<Offset>
+												<AbsDimension x="-15" y="0" />
+											</Offset>
+										</Anchor>
+									</Anchors>
+									<TexCoords left="0" right="0.2" top="0" bottom="1.0"></TexCoords>
+								</Texture>
+								<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Right">
+									<Size>
+										<AbsDimension x="95" y="32"></AbsDimension>
+									</Size>
+									<Anchors>
+										<Anchor point="RIGHT">
+											<Offset>
+												<AbsDimension x="15" y="0"></AbsDimension>
+											</Offset>
+										</Anchor>
+									</Anchors>
+									<TexCoords left="0.7" right="1.0" top="0" bottom="1.0"></TexCoords>
+								</Texture>
+							</Layer>
+						</Layers>
+						<Scripts>
+							<OnEscapePressed>
+								this:ClearFocus();
+							</OnEscapePressed>
+							<OnClick>
+								this:SetFocus();
+							</OnClick>
+							<OnEnterPressed>
+											
+							</OnEnterPressed>
+
+							<OnLoad></OnLoad>
+						</Scripts>
+						<FontString inherits="ChatFontNormal"></FontString>
+						<Frames>
+							<Frame name="$parentText">
+						       
+						        <Size>
+						          <AbsDimension x="100" y="20" />
+						        </Size>
+						        <Anchors>
+						          <Anchor point="BOTTOMLEFT"  relativePoint="TOPLEFT">
+						            <Offset>
+						              <AbsDimension x="0" y="-5" />
+						            </Offset>
+						          </Anchor>
+						        </Anchors>
+						        <Scripts>
+						          <OnClick>
+								  </OnClick>
+						        </Scripts>     
+								<Layers>
+						          <Layer>
+						            <FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Buff details:">
+						              <Anchors>
+						                <Anchor point="TOPLEFT" />
+						                <Anchor point="BOTTOMRIGHT" />
+						              </Anchors>
+						              <FontHeight>
+						                <AbsValue val="11" />
+						              </FontHeight>
+						              <Color r="1" g="0.8196079" b="0" />
+						              <Shadow>
+						                <Color r="0" g="0" b="0" />
+						                <Offset>
+						                  <AbsDimension x="1" y="-1" />
+						                </Offset>
+						              </Shadow>
+						            </FontString>
+						          </Layer>
+						        </Layers>
+						    </Frame>
+						</Frames>
+					</EditBox>
+					
+					<Slider name="$parentCDSlider" minValue="1" maxValue="19" defaultValue="1" valueStep="1" orientation="Horizontal">
+				        < !--<FrameSkin skinid="f15d4970-d66d-444e-bb2d-1ad102c87fed" frameid="f15d4976-d66d-444e-bb2d-1ad102c87fed" />-- >
+				        <Size>
+				          <AbsDimension x="140" y="20" />
+				        </Size>
+						<Anchors>
+							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentDetailsbox">
+								<Offset>
+									<AbsDimension x="0" y="-10"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>
+				        <Scripts>
+						    <OnLoad>
+								
+							</OnLoad>
+							<OnValueChanged> 
+
+								GHI_CDSliderValues = {1,5,10,15,30,60,90,120,60*5,60*10,60*15,60*30,60*60,60*90,60*60*2,60*60*5,60*60*10,60*60*20,60*60*24}
+								this.secs = GHI_CDSliderValues[this:GetValue()];
+								
+								if not(this.secs >= 60) then
+									getglobal(this:GetName().."Label2"):SetText(this.secs.." secs")
+								elseif not(this.secs >= 60*60) then
+									local mins = (this.secs/60)
+									getglobal(this:GetName().."Label2"):SetText(mins.." mins")
+								elseif not(this.secs >= 60*60*24) then
+									local hours = (this.secs / (60*60) );
+									getglobal(this:GetName().."Label2"):SetText(hours.." hours")
+								else
+									local days = (this.secs/ (60*60*24) );
+									getglobal(this:GetName().."Label2"):SetText(days.." day")
+								end
+								
+																		
+							</OnValueChanged>
+						</Scripts>
+						<Layers>
+						  <Layer>
+							<FontString name="$parentLabel1" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Item cooldown:">
+							  <Anchors>
+								<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT" >
+									<Offset>
+										<AbsDimension x="5" y="0"></AbsDimension>
+									</Offset>
+								</Anchor>
+								
+							  </Anchors>
+							  <FontHeight>
+								<AbsValue val="10" />
+							  </FontHeight>
+							  <Color r="1" g="0.8196079" b="0" />
+							</FontString>
+							<FontString name="$parentLabel2" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="0 sec">
+							  <Anchors>
+								<Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" >
+									<Offset>
+										<AbsDimension x="-5" y="0"></AbsDimension>
+									</Offset>
+								</Anchor>
+								
+							  </Anchors>
+							  <FontHeight>
+								<AbsValue val="10" />
+							  </FontHeight>
+							  <Color r="1" g="0.8196079" b="0" />
+							</FontString>
+						  </Layer>
+						</Layers>
+
+						<Backdrop bgFile="Interface\Buttons\UI-SliderBar-Background" edgeFile="Interface\Buttons\UI-SliderBar-Border" tile="false">
+				          <BackgroundInsets>
+				            <AbsInset left="20" right="20" top="20" bottom="20" />
+				          </BackgroundInsets>
+				          <TileSize>
+				            <AbsValue val="8" />
+				          </TileSize>
+				          <EdgeSize>
+				            <AbsValue val="8" />
+				          </EdgeSize>
+				        </Backdrop>
+				        <HitRectInsets>
+				          <AbsInset left="10" right="0" top="0" bottom="0" />
+				        </HitRectInsets>
+				        <ThumbTexture name="$parentThumb" file="Interface\Buttons\UI-SliderBar-Button-Horizontal">
+				          <Size>
+				            <AbsDimension x="32" y="32" />
+				          </Size>
+				        </ThumbTexture>
+				        
+						
+					</Slider>
+			
+					<CheckButton name="$parentCheck1" inherits="OptionsCheckButtonTemplate" checked="true" hidden="false">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentCDSlider" >
+								<Offset>
+									<AbsDimension x="-10" y="0"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>   
+						
+						<Scripts>
+							<OnClick> 
+								if (this:GetChecked() == nil) then
+									getglobal(this:GetName().."TextLabel"):SetText("Harmful");				
+								else
+									getglobal(this:GetName().."TextLabel"):SetText("Helpful");		
+								end
+								
+							</OnClick>		
+						</Scripts>
+						<FontString inherits="ChatFontNormal"></FontString>
+						<Frames>
+							<Frame name="$parentText">
+						        <Size>
+						          <AbsDimension x="200" y="30" />
+						        </Size>
+						        <Anchors>
+						          <Anchor point="LEFT"  relativePoint="RIGHT">
+						            <Offset>
+						              <AbsDimension x="0" y="0" />
+						            </Offset>
+						          </Anchor>
+						        </Anchors>
+						        <Scripts>
+						          <OnClick>
+								  </OnClick>
+						        </Scripts>     
+								<Layers>
+						          <Layer>
+						            <FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Helpful">
+						              <Size>
+							    <AbsDimension x="140" y="30" />
+							  </Size>
+							  <FontHeight>
+						                <AbsValue val="11" />
+						              </FontHeight>
+						              <Color r="1" g="0.8196079" b="0" />
+						              <Shadow>
+						                <Color r="0" g="0" b="0" />
+						                <Offset>
+						                  <AbsDimension x="1" y="-1" />
+						                </Offset>
+						              </Shadow>
+						            </FontString>
+						          </Layer>
+						        </Layers>
+						    </Frame>
+						</Frames>
+					</CheckButton>
+					
+					<CheckButton name="$parentCheck2" inherits="OptionsCheckButtonTemplate" checked="false" hidden="false">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentCheck1" >
+								<Offset>
+									<AbsDimension x="0" y="0"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>   
+						
+						<Scripts>
+							<OnClick> 
+								
+								
+							</OnClick>		
+						</Scripts>
+						<FontString inherits="ChatFontNormal"></FontString>
+						<Frames>
+							<Frame name="$parentText">
+						        <Size>
+						          <AbsDimension x="200" y="30" />
+						        </Size>
+						        <Anchors>
+						          <Anchor point="LEFT"  relativePoint="RIGHT">
+						            <Offset>
+						              <AbsDimension x="0" y="0" />
+						            </Offset>
+						          </Anchor>
+						        </Anchors>
+						        <Scripts>
+						          <OnClick>
+								  </OnClick>
+						        </Scripts>     
+								<Layers>
+						          <Layer>
+						            <FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Consumed">
+						              <Size>
+									    <AbsDimension x="140" y="30" />
+									  </Size>
+									  <FontHeight>
+						                <AbsValue val="11" />
+						              </FontHeight>
+						              <Color r="1" g="0.8196079" b="0" />
+						              <Shadow>
+						                <Color r="0" g="0" b="0" />
+						                <Offset>
+						                  <AbsDimension x="1" y="-1" />
+						                </Offset>
+						              </Shadow>
+						            </FontString>
+						          </Layer>
+						        </Layers>
+						    </Frame>
+						</Frames>
+					</CheckButton>
+					
+					<CheckButton name="$parentCheck3" inherits="OptionsCheckButtonTemplate" checked="false" hidden="false">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentCheck2" >
+								<Offset>
+									<AbsDimension x="0" y="0"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>   
+						
+						<Scripts>
+							<OnClick> 
+								if (this:GetChecked() == nil) then
+									getglobal(this:GetParent():GetName().."DurationSlider"):Show();				
+								else
+									getglobal(this:GetParent():GetName().."DurationSlider"):Hide();		
+								end
+								
+							</OnClick>		
+						</Scripts>
+						<FontString inherits="ChatFontNormal"></FontString>
+						<Frames>
+							<Frame name="$parentText">
+						        <Size>
+						          <AbsDimension x="200" y="30" />
+						        </Size>
+						        <Anchors>
+						          <Anchor point="LEFT"  relativePoint="RIGHT">
+						            <Offset>
+						              <AbsDimension x="0" y="0" />
+						            </Offset>
+						          </Anchor>
+						        </Anchors>
+						        <Scripts>
+						          <OnClick>
+								  </OnClick>
+						        </Scripts>     
+								<Layers>
+						          <Layer>
+						            <FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Last until canceled">
+						              <Size>
+									    <AbsDimension x="140" y="30" />
+									  </Size>
+									  <FontHeight>
+						                <AbsValue val="11" />
+						              </FontHeight>
+						              <Color r="1" g="0.8196079" b="0" />
+						              <Shadow>
+						                <Color r="0" g="0" b="0" />
+						                <Offset>
+						                  <AbsDimension x="1" y="-1" />
+						                </Offset>
+						              </Shadow>
+						            </FontString>
+						          </Layer>
+						        </Layers>
+						    </Frame>
+						</Frames>
+					</CheckButton>
+				
+					
+					<Slider name="$parentDurationSlider" minValue="1" maxValue="19" defaultValue="1" valueStep="1" orientation="Horizontal">
+				        < !--<FrameSkin skinid="f15d4970-d66d-444e-bb2d-1ad102c87fed" frameid="f15d4976-d66d-444e-bb2d-1ad102c87fed" />-- >
+				        <Size>
+				          <AbsDimension x="140" y="20" />
+				        </Size>
+						<Anchors>
+							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentCheck3">
+								<Offset>
+									<AbsDimension x="10" y="-10"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>
+				        <Scripts>
+						    <OnLoad>
+								
+							</OnLoad>
+							<OnValueChanged> 
+
+								GHI_CDSliderValues = {1,5,10,15,30,60,90,120,60*5,60*10,60*15,60*30,60*60,60*90,60*60*2,60*60*5,60*60*10,60*60*20,60*60*24}
+								this.secs = GHI_CDSliderValues[this:GetValue()];
+								
+								if not(this.secs >= 60) then
+									getglobal(this:GetName().."Label2"):SetText(this.secs.." secs")
+								elseif not(this.secs >= 60*60) then
+									local mins = (this.secs/60)
+									getglobal(this:GetName().."Label2"):SetText(mins.." mins")
+								elseif not(this.secs >= 60*60*24) then
+									local hours = (this.secs / (60*60) );
+									getglobal(this:GetName().."Label2"):SetText(hours.." hours")
+								else
+									local days = (this.secs/ (60*60*24) );
+									getglobal(this:GetName().."Label2"):SetText(days.." day")
+								end
+								
+																		
+							</OnValueChanged>
+						</Scripts>
+						<Layers>
+						  <Layer>
+							<FontString name="$parentLabel1" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Buff duration:">
+							  <Anchors>
+								<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT" >
+									<Offset>
+										<AbsDimension x="5" y="0"></AbsDimension>
+									</Offset>
+								</Anchor>
+								
+							  </Anchors>
+							  <FontHeight>
+								<AbsValue val="10" />
+							  </FontHeight>
+							  <Color r="1" g="0.8196079" b="0" />
+							</FontString>
+							<FontString name="$parentLabel2" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="0 sec">
+							  <Anchors>
+								<Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" >
+									<Offset>
+										<AbsDimension x="-5" y="0"></AbsDimension>
+									</Offset>
+								</Anchor>
+								
+							  </Anchors>
+							  <FontHeight>
+								<AbsValue val="10" />
+							  </FontHeight>
+							  <Color r="1" g="0.8196079" b="0" />
+							</FontString>
+						  </Layer>
+						</Layers>
+
+						<Backdrop bgFile="Interface\Buttons\UI-SliderBar-Background" edgeFile="Interface\Buttons\UI-SliderBar-Border" tile="false">
+				          <BackgroundInsets>
+				            <AbsInset left="20" right="20" top="20" bottom="20" />
+				          </BackgroundInsets>
+				          <TileSize>
+				            <AbsValue val="8" />
+				          </TileSize>
+				          <EdgeSize>
+				            <AbsValue val="8" />
+				          </EdgeSize>
+				        </Backdrop>
+				        <HitRectInsets>
+				          <AbsInset left="10" right="0" top="0" bottom="0" />
+				        </HitRectInsets>
+				        <ThumbTexture name="$parentThumb" file="Interface\Buttons\UI-SliderBar-Button-Horizontal">
+				          <Size>
+				            <AbsDimension x="32" y="32" />
+				          </Size>
+				        </ThumbTexture>
+				        
+						
+					</Slider>
+			
+					<Button name="$parentIconButton" inherits="ItemButtonTemplate" hidden="false">
+						<Anchors>
+							<Anchor point="TOPRIGHT" relativePoint="BOTTOMRIGHT" relativeTo="$parentCDSlider">
+								<Offset>
+									<AbsDimension x="30" y="-20"/>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Frames>
+							<Frame name="$parentText">
+						       
+						        <Size>
+						          <AbsDimension x="100" y="20" />
+						        </Size>
+						        <Anchors>
+						          <Anchor point="BOTTOMLEFT"  relativePoint="TOPLEFT">
+						            <Offset>
+						              <AbsDimension x="0" y="0" />
+						            </Offset>
+						          </Anchor>
+						        </Anchors>
+						        <Scripts>
+						          <OnClick>
+								  </OnClick>
+						        </Scripts>     
+								<Layers>
+						          <Layer>
+						            <FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Icon:">
+						              <Anchors>
+						                <Anchor point="TOPLEFT" />
+						                <Anchor point="BOTTOMRIGHT" />
+						              </Anchors>
+						              <FontHeight>
+						                <AbsValue val="11" />
+						              </FontHeight>
+						              <Color r="1" g="0.8196079" b="0" />
+						              <Shadow>
+						                <Color r="0" g="0" b="0" />
+						                <Offset>
+						                  <AbsDimension x="1" y="-1" />
+						                </Offset>
+						              </Shadow>
+						            </FontString>
+						          </Layer>
+						        </Layers>
+						    </Frame>
+						</Frames>
+						<Scripts>
+							<OnClick>
+								local frame = getglobal(((this:GetParent():GetParent()):GetName()).."IconFrame");
+								frame.from = this;
+								frame:Show();
+							</OnClick>
+							<PostClick>
+								
+							</PostClick>
+							<OnLoad>
+								SetItemButtonTexture(this, "Interface\\Icons\\INV_Misc_QuestionMark");
+							</OnLoad>
+							<OnEnter>
+
+							</OnEnter>
+							<OnLeave>
+								
+							</OnLeave>
+							<OnHide>
+								
+							</OnHide>
+							<OnDragStart>
+								
+							</OnDragStart>
+							<OnReceiveDrag>
+								
+							</OnReceiveDrag>
+							<OnUpdate>
+								
+							</OnUpdate>
+							<OnEvent>
+								
+							</OnEvent>
+						</Scripts>
+					</Button>
+			
+				</Frames>
+			</Frame>
+			
+			
+			<Frame name="$parentBook" hidden="true">
+				<Frames>
+					<EditBox name="$parentUsebox" hidden="false" letters="64" autoFocus="false">
+						<Size>
+							<AbsDimension x="160" y="32"></AbsDimension>
+						</Size>
+						<Anchors>
+							<Anchor point="TOP" relativePoint="Top" relativeTo="GHI_CreateItemsFrameCommentbox">
+								<Offset>
+									<AbsDimension x="0" y="-170"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Layers>
+							<Layer level="BACKGROUND">
+								<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Left">
+									<Size>
+										<AbsDimension x="95" y="32"></AbsDimension>
+									</Size>
+									<Anchors>
+										<Anchor point="TOPLEFT"  >
+											<Offset>
+												<AbsDimension x="-15" y="0" />
+											</Offset>
+										</Anchor>
+									</Anchors>
+									<TexCoords left="0" right="0.2" top="0" bottom="1.0"></TexCoords>
+								</Texture>
+								<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Right">
+									<Size>
+										<AbsDimension x="95" y="32"></AbsDimension>
+									</Size>
+									<Anchors>
+										<Anchor point="RIGHT">
+											<Offset>
+												<AbsDimension x="15" y="0"></AbsDimension>
+											</Offset>
+										</Anchor>
+									</Anchors>
+									<TexCoords left="0.7" right="1.0" top="0" bottom="1.0"></TexCoords>
+								</Texture>
+							</Layer>
+						</Layers>
+						<Scripts>
+							<OnEscapePressed>
+								this:ClearFocus();
+							</OnEscapePressed>
+							<OnClick>
+								this:SetFocus();
+							</OnClick>
+							<OnEnterPressed>
+											
+							</OnEnterPressed>
+
+							<OnLoad></OnLoad>
+						</Scripts>
+						<FontString inherits="ChatFontNormal"></FontString>
+						<Frames>
+							<Frame name="$parentText">
+						       
+						        <Size>
+						          <AbsDimension x="100" y="20" />
+						        </Size>
+						        <Anchors>
+						          <Anchor point="BOTTOMLEFT"  relativePoint="TOPLEFT">
+						            <Offset>
+						              <AbsDimension x="0" y="-5" />
+						            </Offset>
+						          </Anchor>
+						        </Anchors>
+						        <Scripts>
+						          <OnClick>
+								  </OnClick>
+						        </Scripts>     
+								<Layers>
+						          <Layer>
+						            <FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Use:">
+						              <Anchors>
+						                <Anchor point="TOPLEFT" />
+						                <Anchor point="BOTTOMRIGHT" />
+						              </Anchors>
+						              <FontHeight>
+						                <AbsValue val="11" />
+						              </FontHeight>
+						              <Color r="1" g="0.8196079" b="0" />
+						              <Shadow>
+						                <Color r="0" g="0" b="0" />
+						                <Offset>
+						                  <AbsDimension x="1" y="-1" />
+						                </Offset>
+						              </Shadow>
+						            </FontString>
+						          </Layer>
+						        </Layers>
+						    </Frame>
+						</Frames>
+					</EditBox>
+					
+					<EditBox name="$parentTitlebox" hidden="false" letters="50" autoFocus="false">
+						<Size>
+							<AbsDimension x="160" y="32"></AbsDimension>
+						</Size>
+						<Anchors>
+							<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentUsebox">
+								<Offset>
+									<AbsDimension x="0" y="-10"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Layers>
+							<Layer level="BACKGROUND">
+								<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Left">
+									<Size>
+										<AbsDimension x="95" y="32"></AbsDimension>
+									</Size>
+									<Anchors>
+										<Anchor point="TOPLEFT"  >
+											<Offset>
+												<AbsDimension x="-15" y="0" />
+											</Offset>
+										</Anchor>
+									</Anchors>
+									<TexCoords left="0" right="0.2" top="0" bottom="1.0"></TexCoords>
+								</Texture>
+								<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Right">
+									<Size>
+										<AbsDimension x="95" y="32"></AbsDimension>
+									</Size>
+									<Anchors>
+										<Anchor point="RIGHT">
+											<Offset>
+												<AbsDimension x="15" y="0"></AbsDimension>
+											</Offset>
+										</Anchor>
+									</Anchors>
+									<TexCoords left="0.7" right="1.0" top="0" bottom="1.0"></TexCoords>
+								</Texture>
+							</Layer>
+						</Layers>
+						<Scripts>
+							<OnEscapePressed>
+								this:ClearFocus();
+							</OnEscapePressed>
+							<OnClick>
+								this:SetFocus();
+							</OnClick>
+							<OnEnterPressed>
+											
+							</OnEnterPressed>
+
+							<OnLoad></OnLoad>
+						</Scripts>
+						<FontString inherits="ChatFontNormal"></FontString>
+						<Frames>
+							<Frame name="$parentText">
+						       
+						        <Size>
+						          <AbsDimension x="100" y="20" />
+						        </Size>
+						        <Anchors>
+						          <Anchor point="BOTTOMLEFT"  relativePoint="TOPLEFT">
+						            <Offset>
+						              <AbsDimension x="0" y="-5" />
+						            </Offset>
+						          </Anchor>
+						        </Anchors>
+						        <Scripts>
+						          <OnClick>
+								  </OnClick>
+						        </Scripts>     
+								<Layers>
+						          <Layer>
+						            <FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Title:">
+						              <Anchors>
+						                <Anchor point="TOPLEFT" />
+						                <Anchor point="BOTTOMRIGHT" />
+						              </Anchors>
+						              <FontHeight>
+						                <AbsValue val="11" />
+						              </FontHeight>
+						              <Color r="1" g="0.8196079" b="0" />
+						              <Shadow>
+						                <Color r="0" g="0" b="0" />
+						                <Offset>
+						                  <AbsDimension x="1" y="-1" />
+						                </Offset>
+						              </Shadow>
+						            </FontString>
+						          </Layer>
+						        </Layers>
+						    </Frame>
+						</Frames>
+					</EditBox>
+					
+					
+				</Frames>			
+			</Frame>
+			
+			<Frame name="$parentBag" hidden="true">
+				<Frames>
+					<EditBox name="$parentUsebox" hidden="false" letters="64" autoFocus="false">
+						<Size>
+							<AbsDimension x="160" y="32"></AbsDimension>
+						</Size>
+						<Anchors>
+							<Anchor point="TOP" relativePoint="Top" relativeTo="GHI_CreateItemsFrameCommentbox">
+								<Offset>
+									<AbsDimension x="0" y="-170"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Layers>
+							<Layer level="BACKGROUND">
+								<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Left">
+									<Size>
+										<AbsDimension x="95" y="32"></AbsDimension>
+									</Size>
+									<Anchors>
+										<Anchor point="TOPLEFT"  >
+											<Offset>
+												<AbsDimension x="-15" y="0" />
+											</Offset>
+										</Anchor>
+									</Anchors>
+									<TexCoords left="0" right="0.2" top="0" bottom="1.0"></TexCoords>
+								</Texture>
+								<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Right">
+									<Size>
+										<AbsDimension x="95" y="32"></AbsDimension>
+									</Size>
+									<Anchors>
+										<Anchor point="RIGHT">
+											<Offset>
+												<AbsDimension x="15" y="0"></AbsDimension>
+											</Offset>
+										</Anchor>
+									</Anchors>
+									<TexCoords left="0.7" right="1.0" top="0" bottom="1.0"></TexCoords>
+								</Texture>
+							</Layer>
+						</Layers>
+						<Scripts>
+							<OnEscapePressed>
+								this:ClearFocus();
+							</OnEscapePressed>
+							<OnClick>
+								this:SetFocus();
+							</OnClick>
+							<OnEnterPressed>
+											
+							</OnEnterPressed>
+
+							<OnLoad></OnLoad>
+						</Scripts>
+						<FontString inherits="ChatFontNormal"></FontString>
+						<Frames>
+							<Frame name="$parentText">
+						       
+						        <Size>
+						          <AbsDimension x="100" y="20" />
+						        </Size>
+						        <Anchors>
+						          <Anchor point="BOTTOMLEFT"  relativePoint="TOPLEFT">
+						            <Offset>
+						              <AbsDimension x="0" y="-5" />
+						            </Offset>
+						          </Anchor>
+						        </Anchors>
+						        <Scripts>
+						          <OnClick>
+								  </OnClick>
+						        </Scripts>     
+								<Layers>
+						          <Layer>
+						            <FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Use:">
+						              <Anchors>
+						                <Anchor point="TOPLEFT" />
+						                <Anchor point="BOTTOMRIGHT" />
+						              </Anchors>
+						              <FontHeight>
+						                <AbsValue val="11" />
+						              </FontHeight>
+						              <Color r="1" g="0.8196079" b="0" />
+						              <Shadow>
+						                <Color r="0" g="0" b="0" />
+						                <Offset>
+						                  <AbsDimension x="1" y="-1" />
+						                </Offset>
+						              </Shadow>
+						            </FontString>
+						          </Layer>
+						        </Layers>
+						    </Frame>
+						</Frames>
+					</EditBox>
+					
+					
+					
+					
+					<Slider name="$parentSizeSlider" minValue="4" maxValue="36" defaultValue="8" valueStep="2" orientation="Horizontal">
+				        < !--<FrameSkin skinid="f15d4970-d66d-444e-bb2d-1ad102c87fed" frameid="f15d4976-d66d-444e-bb2d-1ad102c87fed" />-- >
+				        <Size>
+				          <AbsDimension x="140" y="20" />
+				        </Size>
+						<Anchors>
+							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentUsebox">
+								<Offset>
+									<AbsDimension x="0" y="-10"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>
+				        <Scripts>
+						    <OnLoad>
+								
+							</OnLoad>
+							<OnValueChanged> 
+
+								
+								
+								
+								getglobal(this:GetName().."Label2"):SetText(this:GetValue().." slots.")
+								
+								
+																		
+							</OnValueChanged>
+						</Scripts>
+						<Layers>
+						  <Layer>
+							<FontString name="$parentLabel1" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Bag size:">
+							  <Anchors>
+								<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT" >
+									<Offset>
+										<AbsDimension x="5" y="0"></AbsDimension>
+									</Offset>
+								</Anchor>
+								
+							  </Anchors>
+							  <FontHeight>
+								<AbsValue val="10" />
+							  </FontHeight>
+							  <Color r="1" g="0.8196079" b="0" />
+							</FontString>
+							<FontString name="$parentLabel2" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="8 slots.">
+							  <Anchors>
+								<Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" >
+									<Offset>
+										<AbsDimension x="-5" y="0"></AbsDimension>
+									</Offset>
+								</Anchor>
+								
+							  </Anchors>
+							  <FontHeight>
+								<AbsValue val="10" />
+							  </FontHeight>
+							  <Color r="1" g="0.8196079" b="0" />
+							</FontString>
+						  </Layer>
+						</Layers>
+
+						<Backdrop bgFile="Interface\Buttons\UI-SliderBar-Background" edgeFile="Interface\Buttons\UI-SliderBar-Border" tile="false">
+				          <BackgroundInsets>
+				            <AbsInset left="20" right="20" top="20" bottom="20" />
+				          </BackgroundInsets>
+				          <TileSize>
+				            <AbsValue val="8" />
+				          </TileSize>
+				          <EdgeSize>
+				            <AbsValue val="8" />
+				          </EdgeSize>
+				        </Backdrop>
+				        <HitRectInsets>
+				          <AbsInset left="10" right="0" top="0" bottom="0" />
+				        </HitRectInsets>
+				        <ThumbTexture name="$parentThumb" file="Interface\Buttons\UI-SliderBar-Button-Horizontal">
+				          <Size>
+				            <AbsDimension x="32" y="32" />
+				          </Size>
+				        </ThumbTexture>
+				        
+						
+					</Slider>
+			
+					<Frame name="$parentTextureDD" inherits="UIDropDownMenuTemplate" enableMouse="true" hidden="false">
+				
+						<Anchors>
+							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentSizeSlider">
+								<Offset>
+									<AbsDimension x="0" y="-15"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Layers>
+							<Layer level="BACKGROUND">
+								<FontString name="$parentLabel" inherits="GameFontNormalSmall" text="Texture:" justifyH="RIGHT">
+									<Anchors>
+										<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT">
+											<Offset>
+												<AbsDimension x="20" y="0"/>
+											</Offset>
+										</Anchor>
+										
+									</Anchors>
+									<FontHeight>
+										<AbsValue val="11" />
+									</FontHeight>
+								</FontString>
+							</Layer>
+						</Layers>
+						<Scripts>
+		                   <OnLoad>
+							   UIDropDownMenu_Initialize(this, GHI_TextureDD_Update);
+						   </OnLoad>
+					   
+						   <OnClick>
+							   GHI_TextureDD_OnClick;
+						   </OnClick>
+		               </Scripts>
+						<Frames>
+							<Frame name="$parentText">
+								< !--<FrameSkin skinid="dcb143e1-a4ab-4e7c-b934-1efa40101d21" frameid="2d508885-59c2-4f83-ae10-27aaad48391b" />-- >
+								<Size>
+								  <AbsDimension x="100" y="14" />
+								</Size>						
+								<Anchors>
+								  <Anchor point="LEFT"  relativePoint="LEFT">
+									<Offset>
+									  <AbsDimension x="25" y="3" />
+									</Offset>
+								  </Anchor>
+								</Anchors>
+								<Scripts>
+								  <OnClick>
+								  </OnClick>
+								</Scripts>     
+								<Layers>
+								  <Layer>
+									<FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Normal">
+									  <Anchors>
+										<Anchor point="TOPLEFT" />
+										<Anchor point="BOTTOMRIGHT" />
+									  </Anchors>
+									  <FontHeight>
+										<AbsValue val="10" />
+									  </FontHeight>
+									  <Color r="1" g="1" b="1" />
+									  
+									</FontString>
+								  </Layer>
+								</Layers>
+							</Frame>	
+							
+						</Frames>
+					</Frame>
+								
+					
+				</Frames>
+			</Frame>
+			
+			<Frame name="$parentReputation" hidden="true">
+				<Frames>
+					<EditBox name="$parentUsebox" hidden="false" letters="64" autoFocus="false">
+						<Size>
+							<AbsDimension x="160" y="32"></AbsDimension>
+						</Size>
+						<Anchors>
+							<Anchor point="TOP" relativePoint="Top" relativeTo="GHI_CreateItemsFrameCommentbox">
+								<Offset>
+									<AbsDimension x="0" y="-170"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Layers>
+							<Layer level="BACKGROUND">
+								<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Left">
+									<Size>
+										<AbsDimension x="95" y="32"></AbsDimension>
+									</Size>
+									<Anchors>
+										<Anchor point="TOPLEFT"  >
+											<Offset>
+												<AbsDimension x="-15" y="0" />
+											</Offset>
+										</Anchor>
+									</Anchors>
+									<TexCoords left="0" right="0.2" top="0" bottom="1.0"></TexCoords>
+								</Texture>
+								<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Right">
+									<Size>
+										<AbsDimension x="95" y="32"></AbsDimension>
+									</Size>
+									<Anchors>
+										<Anchor point="RIGHT">
+											<Offset>
+												<AbsDimension x="15" y="0"></AbsDimension>
+											</Offset>
+										</Anchor>
+									</Anchors>
+									<TexCoords left="0.7" right="1.0" top="0" bottom="1.0"></TexCoords>
+								</Texture>
+							</Layer>
+						</Layers>
+						<Scripts>
+							<OnEscapePressed>
+								this:ClearFocus();
+							</OnEscapePressed>
+							<OnClick>
+								this:SetFocus();
+							</OnClick>
+							<OnEnterPressed>
+											
+							</OnEnterPressed>
+
+							<OnLoad></OnLoad>
+						</Scripts>
+						<FontString inherits="ChatFontNormal"></FontString>
+						<Frames>
+							<Frame name="$parentText">
+						       
+						        <Size>
+						          <AbsDimension x="100" y="20" />
+						        </Size>
+						        <Anchors>
+						          <Anchor point="BOTTOMLEFT"  relativePoint="TOPLEFT">
+						            <Offset>
+						              <AbsDimension x="0" y="-5" />
+						            </Offset>
+						          </Anchor>
+						        </Anchors>
+						        <Scripts>
+						          <OnClick>
+								  </OnClick>
+						        </Scripts>     
+								<Layers>
+						          <Layer>
+						            <FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Use:">
+						              <Anchors>
+						                <Anchor point="TOPLEFT" />
+						                <Anchor point="BOTTOMRIGHT" />
+						              </Anchors>
+						              <FontHeight>
+						                <AbsValue val="11" />
+						              </FontHeight>
+						              <Color r="1" g="0.8196079" b="0" />
+						              <Shadow>
+						                <Color r="0" g="0" b="0" />
+						                <Offset>
+						                  <AbsDimension x="1" y="-1" />
+						                </Offset>
+						              </Shadow>
+						            </FontString>
+						          </Layer>
+						        </Layers>
+						    </Frame>
+						</Frames>
+					</EditBox>
+					
+					<Slider name="$parentCDSlider" minValue="1" maxValue="19" defaultValue="1" valueStep="1" orientation="Horizontal">
+				        < !--<FrameSkin skinid="f15d4970-d66d-444e-bb2d-1ad102c87fed" frameid="f15d4976-d66d-444e-bb2d-1ad102c87fed" />-- >
+				        <Size>
+				          <AbsDimension x="140" y="20" />
+				        </Size>
+						<Anchors>
+							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentUsebox">
+								<Offset>
+									<AbsDimension x="0" y="-10"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>
+				        <Scripts>
+						    <OnLoad>
+								
+							</OnLoad>
+							<OnValueChanged> 
+
+								GHI_CDSliderValues = {1,5,10,15,30,60,90,120,60*5,60*10,60*15,60*30,60*60,60*90,60*60*2,60*60*5,60*60*10,60*60*20,60*60*24}
+								this.secs = GHI_CDSliderValues[this:GetValue()];
+								
+								if not(this.secs >= 60) then
+									getglobal(this:GetName().."Label2"):SetText(this.secs.." secs")
+								elseif not(this.secs >= 60*60) then
+									local mins = (this.secs/60)
+									getglobal(this:GetName().."Label2"):SetText(mins.." mins")
+								elseif not(this.secs >= 60*60*24) then
+									local hours = (this.secs / (60*60) );
+									getglobal(this:GetName().."Label2"):SetText(hours.." hours")
+								else
+									local days = (this.secs/ (60*60*24) );
+									getglobal(this:GetName().."Label2"):SetText(days.." day")
+								end
+								
+																		
+							</OnValueChanged>
+						</Scripts>
+						<Layers>
+						  <Layer>
+							<FontString name="$parentLabel1" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Item cooldown:">
+							  <Anchors>
+								<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT" >
+									<Offset>
+										<AbsDimension x="5" y="0"></AbsDimension>
+									</Offset>
+								</Anchor>
+								
+							  </Anchors>
+							  <FontHeight>
+								<AbsValue val="10" />
+							  </FontHeight>
+							  <Color r="1" g="0.8196079" b="0" />
+							</FontString>
+							<FontString name="$parentLabel2" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="0 sec">
+							  <Anchors>
+								<Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" >
+									<Offset>
+										<AbsDimension x="-5" y="0"></AbsDimension>
+									</Offset>
+								</Anchor>
+								
+							  </Anchors>
+							  <FontHeight>
+								<AbsValue val="10" />
+							  </FontHeight>
+							  <Color r="1" g="0.8196079" b="0" />
+							</FontString>
+						  </Layer>
+						</Layers>
+
+						<Backdrop bgFile="Interface\Buttons\UI-SliderBar-Background" edgeFile="Interface\Buttons\UI-SliderBar-Border" tile="false">
+				          <BackgroundInsets>
+				            <AbsInset left="20" right="20" top="20" bottom="20" />
+				          </BackgroundInsets>
+				          <TileSize>
+				            <AbsValue val="8" />
+				          </TileSize>
+				          <EdgeSize>
+				            <AbsValue val="8" />
+				          </EdgeSize>
+				        </Backdrop>
+				        <HitRectInsets>
+				          <AbsInset left="10" right="0" top="0" bottom="0" />
+				        </HitRectInsets>
+				        <ThumbTexture name="$parentThumb" file="Interface\Buttons\UI-SliderBar-Button-Horizontal">
+				          <Size>
+				            <AbsDimension x="32" y="32" />
+				          </Size>
+				        </ThumbTexture>
+				        
+						
+					</Slider>
+			
+					
+					
+					<EditBox name="$parentRepAmountbox" hidden="false" letters="6" autoFocus="false" numeric="false">
+						<Size>
+							<AbsDimension x="50" y="32"></AbsDimension>
+						</Size>
+						<Anchors>
+							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentCDSlider">
+								<Offset>
+									<AbsDimension x="0" y="-15"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Layers>
+							<Layer level="BACKGROUND">
+								<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Left">
+									<Size>
+										<AbsDimension x="50" y="32"></AbsDimension>
+									</Size>
+									<Anchors>
+										<Anchor point="TOPLEFT"  >
+											<Offset>
+												<AbsDimension x="-15" y="0" />
+											</Offset>
+										</Anchor>
+									</Anchors>
+									<TexCoords left="0" right="0.2" top="0" bottom="1.0"></TexCoords>
+								</Texture>
+								<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Right">
+									<Size>
+										<AbsDimension x="50" y="32"></AbsDimension>
+									</Size>
+									<Anchors>
+										<Anchor point="RIGHT">
+											<Offset>
+												<AbsDimension x="15" y="0"></AbsDimension>
+											</Offset>
+										</Anchor>
+									</Anchors>
+									<TexCoords left="0.7" right="1.0" top="0" bottom="1.0"></TexCoords>
+								</Texture>
+							</Layer>
+						</Layers>
+						<Scripts>
+							<OnEscapePressed>
+								this:ClearFocus();
+							</OnEscapePressed>
+							<OnClick>
+								this:SetFocus();
+							</OnClick>
+							<OnEnterPressed>
+											
+							</OnEnterPressed>
+
+							<OnLoad></OnLoad>
+						</Scripts>
+						<FontString inherits="ChatFontNormal"></FontString>
+						<Frames>
+							<Frame name="$parentText">
+						       
+						        <Size>
+						          <AbsDimension x="100" y="20" />
+						        </Size>
+						        <Anchors>
+						          <Anchor point="BOTTOMLEFT"  relativePoint="TOPLEFT">
+						            <Offset>
+						              <AbsDimension x="0" y="-5" />
+						            </Offset>
+						          </Anchor>
+						        </Anchors>
+						        <Scripts>
+						          <OnClick>
+								  </OnClick>
+						        </Scripts>     
+								<Layers>
+						          <Layer>
+						            <FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Rep. Amount:">
+						              <Anchors>
+						                <Anchor point="TOPLEFT" />
+						                <Anchor point="BOTTOMRIGHT" />
+						              </Anchors>
+						              <FontHeight>
+						                <AbsValue val="11" />
+						              </FontHeight>
+						              <Color r="1" g="0.8196079" b="0" />
+						              <Shadow>
+						                <Color r="0" g="0" b="0" />
+						                <Offset>
+						                  <AbsDimension x="1" y="-1" />
+						                </Offset>
+						              </Shadow>
+						            </FontString>
+						          </Layer>
+						        </Layers>
+						    </Frame>
+						</Frames>
+					</EditBox>
+					
+					<CheckButton name="$parentCheck2" inherits="OptionsCheckButtonTemplate" checked="false" hidden="false">
+						<Anchors>
+							<Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$parentRepAmountbox" >
+								<Offset>
+									<AbsDimension x="20" y="0"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>   
+						
+						<Scripts>
+							<OnClick> 
+								
+								
+							</OnClick>		
+						</Scripts>
+						<FontString inherits="ChatFontNormal"></FontString>
+						<Frames>
+							<Frame name="$parentText">
+						        <Size>
+						          <AbsDimension x="200" y="30" />
+						        </Size>
+						        <Anchors>
+						          <Anchor point="LEFT"  relativePoint="RIGHT">
+						            <Offset>
+						              <AbsDimension x="0" y="0" />
+						            </Offset>
+						          </Anchor>
+						        </Anchors>
+						        <Scripts>
+						          <OnClick>
+								  </OnClick>
+						        </Scripts>     
+								<Layers>
+						          <Layer>
+						            <FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Consumed">
+						              <Size>
+									    <AbsDimension x="140" y="30" />
+									  </Size>
+									  <FontHeight>
+						                <AbsValue val="11" />
+						              </FontHeight>
+						              <Color r="1" g="0.8196079" b="0" />
+						              <Shadow>
+						                <Color r="0" g="0" b="0" />
+						                <Offset>
+						                  <AbsDimension x="1" y="-1" />
+						                </Offset>
+						              </Shadow>
+						            </FontString>
+						          </Layer>
+						        </Layers>
+						    </Frame>
+						</Frames>
+					</CheckButton>
+					
+					<Frame name="$parentFactionDD" inherits="UIDropDownMenuTemplate" enableMouse="true" hidden="false">
+				
+						<Anchors>
+							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentRepAmountbox">
+								<Offset>
+									<AbsDimension x="0" y="-15"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Layers>
+							<Layer level="BACKGROUND">
+								<FontString name="$parentLabel" inherits="GameFontNormalSmall" text="Faction:" justifyH="RIGHT">
+									<Anchors>
+										<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT">
+											<Offset>
+												<AbsDimension x="20" y="0"/>
+											</Offset>
+										</Anchor>
+										
+									</Anchors>
+									<FontHeight>
+										<AbsValue val="11" />
+									</FontHeight>
+								</FontString>
+							</Layer>
+						</Layers>
+						<Scripts>
+		                   <OnLoad>
+							   UIDropDownMenu_Initialize(this, GHI_FactionDD_Update);
+						   </OnLoad>
+					   
+						   <OnClick>
+							   GHI_FactionDD_OnClick;
+						   </OnClick>
+		               </Scripts>
+						<Frames>
+							<Frame name="$parentText">
+								< !--<FrameSkin skinid="dcb143e1-a4ab-4e7c-b934-1efa40101d21" frameid="2d508885-59c2-4f83-ae10-27aaad48391b" />-- >
+								<Size>
+								  <AbsDimension x="100" y="14" />
+								</Size>						
+								<Anchors>
+								  <Anchor point="LEFT"  relativePoint="LEFT">
+									<Offset>
+									  <AbsDimension x="25" y="3" />
+									</Offset>
+								  </Anchor>
+								</Anchors>
+								<Scripts>
+								  <OnClick>
+								  </OnClick>
+								</Scripts>     
+								<Layers>
+								  <Layer>
+									<FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="None">
+									  <Anchors>
+										<Anchor point="TOPLEFT" />
+										<Anchor point="BOTTOMRIGHT" />
+									  </Anchors>
+									  <FontHeight>
+										<AbsValue val="10" />
+									  </FontHeight>
+									  <Color r="1" g="1" b="1" />
+									  
+									</FontString>
+								  </Layer>
+								</Layers>
+							</Frame>	
+							
+						</Frames>
+					</Frame>
+								
+					
+				</Frames>
+			</Frame>
+			
+			<Frame name="$parentScript" hidden="true">
+				<Frames>
+					<EditBox name="$parentUsebox" hidden="false" letters="64" autoFocus="false">
+						<Size>
+							<AbsDimension x="160" y="32"></AbsDimension>
+						</Size>
+						<Anchors>
+							<Anchor point="TOP" relativePoint="Top" relativeTo="GHI_CreateItemsFrameCommentbox">
+								<Offset>
+									<AbsDimension x="0" y="-170"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Layers>
+							<Layer level="BACKGROUND">
+								<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Left">
+									<Size>
+										<AbsDimension x="95" y="32"></AbsDimension>
+									</Size>
+									<Anchors>
+										<Anchor point="TOPLEFT"  >
+											<Offset>
+												<AbsDimension x="-15" y="0" />
+											</Offset>
+										</Anchor>
+									</Anchors>
+									<TexCoords left="0" right="0.2" top="0" bottom="1.0"></TexCoords>
+								</Texture>
+								<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Right">
+									<Size>
+										<AbsDimension x="95" y="32"></AbsDimension>
+									</Size>
+									<Anchors>
+										<Anchor point="RIGHT">
+											<Offset>
+												<AbsDimension x="15" y="0"></AbsDimension>
+											</Offset>
+										</Anchor>
+									</Anchors>
+									<TexCoords left="0.7" right="1.0" top="0" bottom="1.0"></TexCoords>
+								</Texture>
+							</Layer>
+						</Layers>
+						<Scripts>
+							<OnEscapePressed>
+								this:ClearFocus();
+							</OnEscapePressed>
+							<OnClick>
+								this:SetFocus();
+							</OnClick>
+							<OnEnterPressed>
+											
+							</OnEnterPressed>
+
+							<OnLoad></OnLoad>
+						</Scripts>
+						<FontString inherits="ChatFontNormal"></FontString>
+						<Frames>
+							<Frame name="$parentText">
+						       
+						        <Size>
+						          <AbsDimension x="100" y="20" />
+						        </Size>
+						        <Anchors>
+						          <Anchor point="BOTTOMLEFT"  relativePoint="TOPLEFT">
+						            <Offset>
+						              <AbsDimension x="0" y="-5" />
+						            </Offset>
+						          </Anchor>
+						        </Anchors>
+						        <Scripts>
+						          <OnClick>
+								  </OnClick>
+						        </Scripts>     
+								<Layers>
+						          <Layer>
+						            <FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Use:">
+						              <Anchors>
+						                <Anchor point="TOPLEFT" />
+						                <Anchor point="BOTTOMRIGHT" />
+						              </Anchors>
+						              <FontHeight>
+						                <AbsValue val="11" />
+						              </FontHeight>
+						              <Color r="1" g="0.8196079" b="0" />
+						              <Shadow>
+						                <Color r="0" g="0" b="0" />
+						                <Offset>
+						                  <AbsDimension x="1" y="-1" />
+						                </Offset>
+						              </Shadow>
+						            </FontString>
+						          </Layer>
+						        </Layers>
+						    </Frame>
+						</Frames>
+					</EditBox>
+					
+					<Slider name="$parentCDSlider" minValue="1" maxValue="19" defaultValue="1" valueStep="1" orientation="Horizontal">
+				        < !--<FrameSkin skinid="f15d4970-d66d-444e-bb2d-1ad102c87fed" frameid="f15d4976-d66d-444e-bb2d-1ad102c87fed" />-- >
+				        <Size>
+				          <AbsDimension x="140" y="20" />
+				        </Size>
+						<Anchors>
+							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentUsebox">
+								<Offset>
+									<AbsDimension x="0" y="-10"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>
+				        <Scripts>
+						    <OnLoad>
+								
+							</OnLoad>
+							<OnValueChanged> 
+
+								GHI_CDSliderValues = {1,5,10,15,30,60,90,120,60*5,60*10,60*15,60*30,60*60,60*90,60*60*2,60*60*5,60*60*10,60*60*20,60*60*24}
+								this.secs = GHI_CDSliderValues[this:GetValue()];
+								
+								if not(this.secs >= 60) then
+									getglobal(this:GetName().."Label2"):SetText(this.secs.." secs")
+								elseif not(this.secs >= 60*60) then
+									local mins = (this.secs/60)
+									getglobal(this:GetName().."Label2"):SetText(mins.." mins")
+								elseif not(this.secs >= 60*60*24) then
+									local hours = (this.secs / (60*60) );
+									getglobal(this:GetName().."Label2"):SetText(hours.." hours")
+								else
+									local days = (this.secs/ (60*60*24) );
+									getglobal(this:GetName().."Label2"):SetText(days.." day")
+								end
+								
+																		
+							</OnValueChanged>
+						</Scripts>
+						<Layers>
+						  <Layer>
+							<FontString name="$parentLabel1" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Item cooldown:">
+							  <Anchors>
+								<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT" >
+									<Offset>
+										<AbsDimension x="5" y="0"></AbsDimension>
+									</Offset>
+								</Anchor>
+								
+							  </Anchors>
+							  <FontHeight>
+								<AbsValue val="10" />
+							  </FontHeight>
+							  <Color r="1" g="0.8196079" b="0" />
+							</FontString>
+							<FontString name="$parentLabel2" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="0 sec">
+							  <Anchors>
+								<Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" >
+									<Offset>
+										<AbsDimension x="-5" y="0"></AbsDimension>
+									</Offset>
+								</Anchor>
+								
+							  </Anchors>
+							  <FontHeight>
+								<AbsValue val="10" />
+							  </FontHeight>
+							  <Color r="1" g="0.8196079" b="0" />
+							</FontString>
+						  </Layer>
+						</Layers>
+
+						<Backdrop bgFile="Interface\Buttons\UI-SliderBar-Background" edgeFile="Interface\Buttons\UI-SliderBar-Border" tile="false">
+				          <BackgroundInsets>
+				            <AbsInset left="20" right="20" top="20" bottom="20" />
+				          </BackgroundInsets>
+				          <TileSize>
+				            <AbsValue val="8" />
+				          </TileSize>
+				          <EdgeSize>
+				            <AbsValue val="8" />
+				          </EdgeSize>
+				        </Backdrop>
+				        <HitRectInsets>
+				          <AbsInset left="10" right="0" top="0" bottom="0" />
+				        </HitRectInsets>
+				        <ThumbTexture name="$parentThumb" file="Interface\Buttons\UI-SliderBar-Button-Horizontal">
+				          <Size>
+				            <AbsDimension x="32" y="32" />
+				          </Size>
+				        </ThumbTexture>
+				        
+						
+					</Slider>
+			
+					<CheckButton name="$parentCheck2" inherits="OptionsCheckButtonTemplate" checked="false" hidden="false">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentCDSlider">
+								<Offset>
+									<AbsDimension x="0" y="-5"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						
+						<Scripts>
+							<OnClick> 
+								
+								
+							</OnClick>		
+						</Scripts>
+						<FontString inherits="ChatFontNormal"></FontString>
+						<Frames>
+							<Frame name="$parentText">
+						        <Size>
+						          <AbsDimension x="200" y="30" />
+						        </Size>
+						        <Anchors>
+						          <Anchor point="LEFT"  relativePoint="RIGHT">
+						            <Offset>
+						              <AbsDimension x="0" y="0" />
+						            </Offset>
+						          </Anchor>
+						        </Anchors>
+						        <Scripts>
+						          <OnClick>
+								  </OnClick>
+						        </Scripts>     
+								<Layers>
+						          <Layer>
+						            <FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Consumed">
+						              <Size>
+									    <AbsDimension x="140" y="30" />
+									  </Size>
+									  <FontHeight>
+						                <AbsValue val="11" />
+						              </FontHeight>
+						              <Color r="1" g="0.8196079" b="0" />
+						              <Shadow>
+						                <Color r="0" g="0" b="0" />
+						                <Offset>
+						                  <AbsDimension x="1" y="-1" />
+						                </Offset>
+						              </Shadow>
+						            </FontString>
+						          </Layer>
+						        </Layers>
+						    </Frame>
+						</Frames>
+					</CheckButton>
+					
+					<Frame name="$parentCode">
+						<Size>
+							<AbsDimension x="170" y="80"/>
+						</Size>
+						<Anchors>
+							<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentCheck2">
+								<Offset>
+									<AbsDimension x="-10" y="0"></AbsDimension>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Backdrop bgFile="Interface\Tooltips\ChatBubble-Background" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
+							<EdgeSize>
+								<AbsValue val="16"/>
+							</EdgeSize>
+							<TileSize>
+								<AbsValue val="16"/>
+							</TileSize>
+							<BackgroundInsets>
+								<AbsInset left="5" right="5" top="5" bottom="5"/>
+							</BackgroundInsets>
+						</Backdrop>
+						<Frames>
+							<ScrollFrame name="$parentScroll" inherits="UIPanelScrollFrameTemplate">
+								<Size>
+									<AbsDimension x="160" y="68"/>
+								</Size>
+								<Anchors>
+									<Anchor point="TOPLEFT">
+										<Offset>
+											<AbsDimension x="5" y="-7"/>
+										</Offset>
+									</Anchor>
+								</Anchors>
+							    <Scripts>
+									<OnMouseDown>
+										getglobal(this:GetName().."Text"):SetFocus();
+									</OnMouseDown>
+									<OnMouseUp>
+										getglobal(this:GetName().."Text"):SetFocus();
+										
+									</OnMouseUp> 
+								</Scripts>
+								<ScrollChild>
+									<EditBox name="$parentText" letters="2048" multiLine="true" autoFocus="false">
+										<Size>
+											<AbsDimension x="160" y="100"/>
+										</Size>
+										<Scripts>
+											<OnEscapePressed>
+												this:ClearFocus();
+											</OnEscapePressed>
+											<OnTextChanged>
+												local scrollBar = getglobal(this:GetParent():GetName().."ScrollBar")
+												local min;
+												local max;
+												min, max = scrollBar:GetMinMaxValues();
+												if ( max > 0 and (this.max ~= max) ) then
+													this.max = max;
+													scrollBar:SetValue(max);
+												end
+											</OnTextChanged>
+										</Scripts>
+										<FontString inherits="GameFontHighlight"/>
+									</EditBox>
+								</ScrollChild>
+							</ScrollFrame>
+						</Frames>
+					</Frame>
+					
+					
+					
+				</Frames>
+			</Frame>
+			
+			
+			<Button name="$parentOk" hidden="false" text="Ok">		
+				<Size>
+				  <AbsDimension x="80" y="30" />
+				</Size>
+				<Anchors>
+				  <Anchor point="BOTTOM"  relativePoint="BOTTOM" >
+					<Offset>
+					  <AbsDimension x="-50" y="15" />
+					</Offset>
+				  </Anchor>
+				</Anchors>
+				<Scripts>
+				  <OnClick>
+					local parent = (this:GetParent()):GetName();
+					GHI_CreateItemOnOK(parent);
+				  </OnClick>
+				</Scripts>
+				<NormalTexture file="Interface\Buttons\UI-Panel-Button-Up">
+				  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+				</NormalTexture>
+				<PushedTexture file="Interface\Buttons\UI-Panel-Button-Down">
+				  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+				</PushedTexture>
+				<DisabledTexture file="Interface\Buttons\UI-Panel-Button-Down">
+				  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+				</DisabledTexture>
+				<HighlightTexture file="Interface\Buttons\UI-Panel-Button-Highlight" alphaMode="ADD">
+				  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+				</HighlightTexture>
+				<ButtonText name="$parentText">
+				  <FontHeight>
+					<AbsValue val="10" />
+				  </FontHeight>
+				</ButtonText>
+				<NormalFont inherits="GameFontNormal" font="Fonts\FRIZQT__.TTF">
+				  <FontHeight>
+					<AbsValue val="12" />
+				  </FontHeight>
+				  <Color r="1" g="0.8196079" b="0" />
+				  <Shadow>
+					<Color r="0" g="0" b="0" />
+					<Offset>
+					  <AbsDimension x="1" y="-1" />
+					</Offset>
+				  </Shadow>
+				</NormalFont>
+				<HighlightFont inherits="GameFontHighlight" font="Fonts\FRIZQT__.TTF">
+				  <FontHeight>
+					<AbsValue val="12" />
+				  </FontHeight>
+				  <Color r="1" g="1" b="1" />
+				  <Shadow>
+					<Color r="0" g="0" b="0" />
+					<Offset>
+					  <AbsDimension x="1" y="-1" />
+					</Offset>
+				  </Shadow>
+				</HighlightFont>
+				<DisabledFont inherits="GameFontDisable" font="Fonts\FRIZQT__.TTF">
+				  <FontHeight>
+					<AbsValue val="12" />
+				  </FontHeight>
+				  <Color r="1" g="0.8196079" b="0" />
+				  <Shadow>
+					<Color r="0" g="0" b="0" />
+					<Offset>
+					  <AbsDimension x="1" y="-1" />
+					</Offset>
+				  </Shadow>
+				</DisabledFont>
+			</Button>
+			
+			<Button name="$parentCancel" hidden="false" text="Cancel">		
+				<Size>
+				  <AbsDimension x="80" y="30" />
+				</Size>
+				<Anchors>
+				  <Anchor point="BOTTOM"  relativePoint="BOTTOM" >
+					<Offset>
+					  <AbsDimension x="50" y="15" />
+					</Offset>
+				  </Anchor>
+				</Anchors>
+				<Scripts>
+				  <OnClick>
+					this:GetParent():Hide();
+				  </OnClick>
+				</Scripts>
+				<NormalTexture file="Interface\Buttons\UI-Panel-Button-Up">
+				  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+				</NormalTexture>
+				<PushedTexture file="Interface\Buttons\UI-Panel-Button-Down">
+				  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+				</PushedTexture>
+				<DisabledTexture file="Interface\Buttons\UI-Panel-Button-Down">
+				  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+				</DisabledTexture>
+				<HighlightTexture file="Interface\Buttons\UI-Panel-Button-Highlight" alphaMode="ADD">
+				  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+				</HighlightTexture>
+				<ButtonText name="$parentText">
+				  <FontHeight>
+					<AbsValue val="10" />
+				  </FontHeight>
+				</ButtonText>
+				<NormalFont inherits="GameFontNormal" font="Fonts\FRIZQT__.TTF">
+				  <FontHeight>
+					<AbsValue val="12" />
+				  </FontHeight>
+				  <Color r="1" g="0.8196079" b="0" />
+				  <Shadow>
+					<Color r="0" g="0" b="0" />
+					<Offset>
+					  <AbsDimension x="1" y="-1" />
+					</Offset>
+				  </Shadow>
+				</NormalFont>
+				<HighlightFont inherits="GameFontHighlight" font="Fonts\FRIZQT__.TTF">
+				  <FontHeight>
+					<AbsValue val="12" />
+				  </FontHeight>
+				  <Color r="1" g="1" b="1" />
+				  <Shadow>
+					<Color r="0" g="0" b="0" />
+					<Offset>
+					  <AbsDimension x="1" y="-1" />
+					</Offset>
+				  </Shadow>
+				</HighlightFont>
+				<DisabledFont inherits="GameFontDisable" font="Fonts\FRIZQT__.TTF">
+				  <FontHeight>
+					<AbsValue val="12" />
+				  </FontHeight>
+				  <Color r="1" g="0.8196079" b="0" />
+				  <Shadow>
+					<Color r="0" g="0" b="0" />
+					<Offset>
+					  <AbsDimension x="1" y="-1" />
+					</Offset>
+				  </Shadow>
+				</DisabledFont>
+			</Button>
+			
+			<Frame name="$parentEditButtons" hidden="true">
+				<Frames>
+					<Button name="$parentAll" hidden="false" text="Edit All">		
+						<Size>
+						  <AbsDimension x="55" y="30" />
+						</Size>
+						<Anchors>
+						  <Anchor point="BOTTOM" relativeTo="GHI_CreateItemsFrame" relativePoint="BOTTOM" >
+							<Offset>
+							  <AbsDimension x="-75" y="15" />
+							</Offset>
+						  </Anchor>
+						</Anchors>
+						<Scripts>
+						  <OnClick>
+							GHI_EditItemOnOK(true);
+						  </OnClick>
+						</Scripts>
+						<NormalTexture file="Interface\Buttons\UI-Panel-Button-Up">
+						  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+						</NormalTexture>
+						<PushedTexture file="Interface\Buttons\UI-Panel-Button-Down">
+						  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+						</PushedTexture>
+						<DisabledTexture file="Interface\Buttons\UI-Panel-Button-Down">
+						  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+						</DisabledTexture>
+						<HighlightTexture file="Interface\Buttons\UI-Panel-Button-Highlight" alphaMode="ADD">
+						  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+						</HighlightTexture>
+						<ButtonText name="$parentText">
+						  <FontHeight>
+							<AbsValue val="10" />
+						  </FontHeight>
+						</ButtonText>
+						<NormalFont inherits="GameFontNormal" font="Fonts\FRIZQT__.TTF">
+						  <FontHeight>
+							<AbsValue val="12" />
+						  </FontHeight>
+						  <Color r="1" g="0.8196079" b="0" />
+						  <Shadow>
+							<Color r="0" g="0" b="0" />
+							<Offset>
+							  <AbsDimension x="1" y="-1" />
+							</Offset>
+						  </Shadow>
+						</NormalFont>
+						<HighlightFont inherits="GameFontHighlight" font="Fonts\FRIZQT__.TTF">
+						  <FontHeight>
+							<AbsValue val="12" />
+						  </FontHeight>
+						  <Color r="1" g="1" b="1" />
+						  <Shadow>
+							<Color r="0" g="0" b="0" />
+							<Offset>
+							  <AbsDimension x="1" y="-1" />
+							</Offset>
+						  </Shadow>
+						</HighlightFont>
+						<DisabledFont inherits="GameFontDisable" font="Fonts\FRIZQT__.TTF">
+						  <FontHeight>
+							<AbsValue val="12" />
+						  </FontHeight>
+						  <Color r="1" g="0.8196079" b="0" />
+						  <Shadow>
+							<Color r="0" g="0" b="0" />
+							<Offset>
+							  <AbsDimension x="1" y="-1" />
+							</Offset>
+						  </Shadow>
+						</DisabledFont>
+					</Button>
+					<Button name="$parentStack" hidden="false" text="Edit This Stack Only">		
+						<Size>
+						  <AbsDimension x="70" y="30" />
+						</Size>
+						<Anchors>
+						  <Anchor point="BOTTOM" relativeTo="GHI_CreateItemsFrame" relativePoint="BOTTOM" >
+							<Offset>
+							  <AbsDimension x="0" y="15" />
+							</Offset>
+						  </Anchor>
+						</Anchors>
+						<Scripts>
+						  <OnLoad>
+							getglobal(this:GetName().."Text"):SetText("Edit This \nStack Only");
+						  </OnLoad>
+						  <OnClick>
+							GHI_EditItemOnOK(false);
+						  </OnClick>
+						</Scripts>
+						<NormalTexture file="Interface\Buttons\UI-Panel-Button-Up">
+						  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+						</NormalTexture>
+						<PushedTexture file="Interface\Buttons\UI-Panel-Button-Down">
+						  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+						</PushedTexture>
+						<DisabledTexture file="Interface\Buttons\UI-Panel-Button-Down">
+						  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+						</DisabledTexture>
+						<HighlightTexture file="Interface\Buttons\UI-Panel-Button-Highlight" alphaMode="ADD">
+						  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+						</HighlightTexture>
+						<ButtonText name="$parentText">
+						  <FontHeight>
+							<AbsValue val="10" />
+						  </FontHeight>
+						</ButtonText>
+						<NormalFont inherits="GameFontNormal" font="Fonts\FRIZQT__.TTF">
+						  <FontHeight>
+							<AbsValue val="10" />
+						  </FontHeight>
+						  <Color r="1" g="0.8196079" b="0" />
+						  <Shadow>
+							<Color r="0" g="0" b="0" />
+							<Offset>
+							  <AbsDimension x="1" y="-1" />
+							</Offset>
+						  </Shadow>
+						</NormalFont>
+						<HighlightFont inherits="GameFontHighlight" font="Fonts\FRIZQT__.TTF">
+						  <FontHeight>
+							<AbsValue val="10" />
+						  </FontHeight>
+						  <Color r="1" g="1" b="1" />
+						  <Shadow>
+							<Color r="0" g="0" b="0" />
+							<Offset>
+							  <AbsDimension x="1" y="-1" />
+							</Offset>
+						  </Shadow>
+						</HighlightFont>
+						<DisabledFont inherits="GameFontDisable" font="Fonts\FRIZQT__.TTF">
+						  <FontHeight>
+							<AbsValue val="10" />
+						  </FontHeight>
+						  <Color r="1" g="0.8196079" b="0" />
+						  <Shadow>
+							<Color r="0" g="0" b="0" />
+							<Offset>
+							  <AbsDimension x="1" y="-1" />
+							</Offset>
+						  </Shadow>
+						</DisabledFont>
+					</Button>
+					<Button name="$parentCancel" hidden="false" text="Cancel">		
+						<Size>
+						  <AbsDimension x="55" y="30" />
+						</Size>
+						<Anchors>
+						  <Anchor point="BOTTOM" relativeTo="GHI_CreateItemsFrame" relativePoint="BOTTOM" >
+							<Offset>
+							  <AbsDimension x="75" y="15" />
+							</Offset>
+						  </Anchor>
+						</Anchors>
+						<Scripts>
+						  <OnClick>
+							this:GetParent():GetParent():Hide();
+						  </OnClick>
+						</Scripts>
+						<NormalTexture file="Interface\Buttons\UI-Panel-Button-Up">
+						  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+						</NormalTexture>
+						<PushedTexture file="Interface\Buttons\UI-Panel-Button-Down">
+						  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+						</PushedTexture>
+						<DisabledTexture file="Interface\Buttons\UI-Panel-Button-Down">
+						  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+						</DisabledTexture>
+						<HighlightTexture file="Interface\Buttons\UI-Panel-Button-Highlight" alphaMode="ADD">
+						  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+						</HighlightTexture>
+						<ButtonText name="$parentText">
+						  <FontHeight>
+							<AbsValue val="10" />
+						  </FontHeight>
+						</ButtonText>
+						<NormalFont inherits="GameFontNormal" font="Fonts\FRIZQT__.TTF">
+						  <FontHeight>
+							<AbsValue val="12" />
+						  </FontHeight>
+						  <Color r="1" g="0.8196079" b="0" />
+						  <Shadow>
+							<Color r="0" g="0" b="0" />
+							<Offset>
+							  <AbsDimension x="1" y="-1" />
+							</Offset>
+						  </Shadow>
+						</NormalFont>
+						<HighlightFont inherits="GameFontHighlight" font="Fonts\FRIZQT__.TTF">
+						  <FontHeight>
+							<AbsValue val="12" />
+						  </FontHeight>
+						  <Color r="1" g="1" b="1" />
+						  <Shadow>
+							<Color r="0" g="0" b="0" />
+							<Offset>
+							  <AbsDimension x="1" y="-1" />
+							</Offset>
+						  </Shadow>
+						</HighlightFont>
+						<DisabledFont inherits="GameFontDisable" font="Fonts\FRIZQT__.TTF">
+						  <FontHeight>
+							<AbsValue val="12" />
+						  </FontHeight>
+						  <Color r="1" g="0.8196079" b="0" />
+						  <Shadow>
+							<Color r="0" g="0" b="0" />
+							<Offset>
+							  <AbsDimension x="1" y="-1" />
+							</Offset>
+						  </Shadow>
+						</DisabledFont>
+					</Button>
+				</Frames>
+				
+			</Frame>
+			
+		</Frames>
+
+	</Frame>	
+	
+	
+	-->
+
+
+</Ui>

@@ -1,0 +1,2501 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/ C:\Projects\WoW\Bin\Interface\FrameXML\UI.xsd">
+	
+	<script file="ghm.lua"></script>
+	<script file="ghm_icons.lua"></script>
+	
+	<!--  Submodule templates -->
+	
+	<CheckButton name="GHM_ChooseIconMenuButtonTemplate" inherits="ItemButtonTemplate" virtual="true">
+		<Scripts> 
+			<OnEnter> 
+				this.mouseInside = true;
+			</OnEnter> 
+			<OnUpdate>
+				if this.mouseInside then
+					if IsShiftKeyDown() == 1 then
+						GameTooltip:SetOwner(this, "ANCHOR_LEFT");
+						GameTooltip:ClearLines()
+						GameTooltip:AddLine(this.path,1,0.8196079,0);
+						GameTooltip:Show()
+						this.UpdateTooltip = nil;
+					else
+						GameTooltip:Hide();
+					end
+				end
+			</OnUpdate>
+			<OnLeave>
+				this.mouseInside = nil; 
+				GameTooltip:Hide(); 
+			</OnLeave>
+			<OnMouseWheel>
+				local bar = getglobal(this:GetParent():GetName().."ScrollBar");
+				this = bar;
+				local val = max((FauxScrollFrame_GetOffset(bar) - arg1)*16,0);
+				local _,m = _G[bar:GetName().."ScrollBar"]:GetMinMaxValues();
+				val = min(val,m);
+				
+				local scrollBar = getglobal(this:GetName().."ScrollBar");
+					scrollBar:SetValue(val);
+					this.offset = floor((val / 16) + 0.5);
+					local updateFunction = this:GetScript("OnShow");
+					if updateFunction then updateFunction(); end 
+			</OnMouseWheel>
+		</Scripts>
+	</CheckButton>
+	
+	<Frame name="GHM_IconFrame_Template" virtual="true" hidden="true">
+		<Size>
+		  <AbsDimension x="220" y="345" />
+		</Size>
+		<Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background" edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
+		  <BackgroundInsets>
+			<AbsInset left="11" right="12" top="12" bottom="11" />
+		  </BackgroundInsets>
+		  <TileSize>
+			<AbsValue val="32" />
+		  </TileSize>
+		  <EdgeSize>
+			<AbsValue val="32" />
+		  </EdgeSize>
+		</Backdrop>
+		<Layers>
+		  <Layer>
+			<Texture name="$parentTitleBorder" hidden="false" file="Interface\DialogFrame\UI-DialogBox-Header">
+			  <Size>
+				<AbsDimension x="160" y="32" />
+			  </Size>
+			  <Anchors>
+				<Anchor point="TOP">
+				  <Offset>
+					<AbsDimension x="0" y="7" />
+				  </Offset>
+				</Anchor>
+			  </Anchors>
+			  <TexCoords left="0.2" right="0.8" top="0" bottom="0.6" />
+			</Texture>
+			<FontString name="$parentTitleString" hidden="false" font="Fonts\FRIZQT__.TTF" text="Choose Icon">
+			  <Size>
+				<AbsDimension x="180" y="0" />
+			  </Size>
+			  <Anchors>
+				<Anchor point="TOP">
+				  <Offset>
+					<AbsDimension x="0" y="-4" />
+				  </Offset>
+				</Anchor>
+			  </Anchors>
+			  <FontHeight>
+				<AbsValue val="12" />
+			  </FontHeight>
+			  <Color r="1" g="0.8196079" b="0" />
+			  <Shadow>
+				<Color r="0" g="0" b="0" />
+				<Offset>
+				  <AbsDimension x="1" y="-1" />
+				</Offset>
+			  </Shadow>
+			</FontString>
+			<FontString name="$parentPathHelp" hidden="false" font="Fonts\FRIZQT__.TTF" text="Hold down shift to see the paths of the icons.">
+			  <Size>
+				<AbsDimension x="180" y="0" />
+			  </Size>
+			  <Anchors>
+				<Anchor point="BOTTOMLEFT">
+				  <Offset>
+					<AbsDimension x="5" y="45" />
+				  </Offset>
+				</Anchor>
+			  </Anchors>
+			  <FontHeight>
+				<AbsValue val="12" />
+			  </FontHeight>
+			  <Color r="1" g="1" b="1" />
+			  <Shadow>
+				<Color r="0" g="0" b="0" />
+				<Offset>
+				  <AbsDimension x="1" y="-1" />
+				</Offset>
+			  </Shadow>
+			</FontString>
+				  
+		  </Layer>
+		</Layers>
+		<Frames>
+			
+			<Frame name="$parentCatagory" inherits="UIDropDownMenuTemplate" enableMouse="true" hidden="false">
+				
+				<Anchors>
+					<Anchor point="TOPLEFT" relativePoint="TOPLEFT">
+						<Offset>
+							<AbsDimension x="30" y="-35"></AbsDimension>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				
+				<Layers>
+					<Layer level="BACKGROUND">
+						<FontString name="$parentLabel" inherits="GameFontNormalSmall" text="Catagory:" justifyH="RIGHT">
+							<Anchors>
+								<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT">
+									<Offset>
+										<AbsDimension x="20" y="0"/>
+									</Offset>
+								</Anchor>
+								
+							</Anchors>
+							<FontHeight>
+								<AbsValue val="11" />
+							</FontHeight>
+						</FontString>
+					</Layer>
+				</Layers>
+				<Scripts>
+				   <OnLoad>
+					   UIDropDownMenu_Initialize(this, function()
+							for i = 1,table.getn(GHM_IconCategories) do
+								info            = {};
+								info.text       = GHM_IconCategories[i];
+								info.value      = i;
+								info.owner		= this:GetParent():GetParent();
+								info.func       = function()
+									
+									this.owner.IconCatagory = this.value;
+									this.owner.IconSubcatagory = 1;
+									getglobal(this.owner:GetName().."CatagoryTextLabel"):SetText(GHM_IconCategories[this.value]);
+									getglobal(this.owner:GetName().."SubcatagoryTextLabel"):SetText(GHM_IconSubcategories[GHM_IconCategories[this.value]][this.owner.IconSubcatagory]);
+									getglobal(this.owner:GetName().."ScrollBar"):SetVerticalScroll(1);
+									getglobal(this.owner:GetName().."ScrollBar"):SetVerticalScroll(0);
+								end;
+								UIDropDownMenu_AddButton(info);
+							end	
+						end);
+					    getglobal(this:GetName().."TextLabel"):SetText(GHM_IconCategories[1]);
+				   </OnLoad>
+			   
+				   <OnClick>
+					   ToggleDropDownMenu(1, nil, DropDownMenu, DropDownMenuButton, 0, 0);
+				   </OnClick>
+			   </Scripts>
+				<Frames>
+					<Frame name="$parentText">
+						<!--<FrameSkin skinid="dcb143e1-a4ab-4e7c-b934-1efa40101d21" frameid="2d508885-59c2-4f83-ae10-27aaad48391b" />-->
+						<Size>
+						  <AbsDimension x="100" y="14" />
+						</Size>						
+						<Anchors>
+						  <Anchor point="LEFT"  relativePoint="LEFT">
+							<Offset>
+							  <AbsDimension x="25" y="3" />
+							</Offset>
+						  </Anchor>
+						</Anchors>
+						<Scripts>
+						  <OnClick>
+						  </OnClick>
+						</Scripts>     
+						<Layers>
+						  <Layer>
+							<FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="|CFFFFFFFF Common|r">
+							  <Anchors>
+								<Anchor point="TOPLEFT" />
+								<Anchor point="BOTTOMRIGHT" />
+							  </Anchors>
+							  <FontHeight>
+								<AbsValue val="10" />
+							  </FontHeight>
+							  <Color r="1" g="1" b="1" />
+							  
+							</FontString>
+						  </Layer>
+						</Layers>
+					</Frame>	
+					
+				</Frames>
+			</Frame>
+			
+			<Frame name="$parentSubcatagory" inherits="UIDropDownMenuTemplate" enableMouse="true" hidden="false">
+				
+				<Anchors>
+					<Anchor point="TOPLEFT" relativePoint="TOPLEFT">
+						<Offset>
+							<AbsDimension x="30" y="-80"></AbsDimension>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				
+				<Layers>
+					<Layer level="BACKGROUND">
+						<FontString name="$parentLabel" inherits="GameFontNormalSmall" text="Subcatagory:" justifyH="RIGHT">
+							<Anchors>
+								<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT">
+									<Offset>
+										<AbsDimension x="20" y="0"/>
+									</Offset>
+								</Anchor>
+								
+							</Anchors>
+							<FontHeight>
+								<AbsValue val="11" />
+							</FontHeight>
+						</FontString>
+					</Layer>
+				</Layers>
+				<Scripts>
+				   <OnLoad>
+					   UIDropDownMenu_Initialize(this, function()
+							local IconCatagory
+							local owner = this:GetParent():GetParent();
+							if not(owner.IconCatagory) then owner.IconCatagory = 1; end
+							for i = 1,table.getn(GHM_IconSubcategories[GHM_IconCategories[owner.IconCatagory]]) do
+								info            = {};
+								info.text       = GHM_IconSubcategories[GHM_IconCategories[owner.IconCatagory]][i];
+								info.value      = i;
+								info.owner		= this:GetParent():GetParent();
+								info.func       = function()
+									
+									this.owner.IconSubcatagory = this.value;
+									getglobal(this.owner:GetName().."SubcatagoryTextLabel"):SetText(GHM_IconSubcategories[GHM_IconCategories[owner.IconCatagory]][this.value]);
+									getglobal(this.owner:GetName().."ScrollBar"):SetVerticalScroll(1);
+									getglobal(this.owner:GetName().."ScrollBar"):SetVerticalScroll(0);	
+								end;
+								UIDropDownMenu_AddButton(info);
+							end	
+						end);
+					    getglobal(this:GetName().."TextLabel"):SetText(GHM_IconSubcategories[GHM_IconCategories[1]][1]);
+				   </OnLoad>
+			   
+				   <OnClick>
+					   ToggleDropDownMenu(1, nil, DropDownMenu, DropDownMenuButton, 0, 0);
+				   </OnClick>
+			   </Scripts>
+				<Frames>
+					<Frame name="$parentText">
+						<!--<FrameSkin skinid="dcb143e1-a4ab-4e7c-b934-1efa40101d21" frameid="2d508885-59c2-4f83-ae10-27aaad48391b" />-->
+						<Size>
+						  <AbsDimension x="100" y="14" />
+						</Size>						
+						<Anchors>
+						  <Anchor point="LEFT"  relativePoint="LEFT">
+							<Offset>
+							  <AbsDimension x="25" y="3" />
+							</Offset>
+						  </Anchor>
+						</Anchors>
+						<Scripts>
+						  <OnClick>
+						  </OnClick>
+						</Scripts>     
+						<Layers>
+						  <Layer>
+							<FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="2">
+							  <Anchors>
+								<Anchor point="TOPLEFT" />
+								<Anchor point="BOTTOMRIGHT" />
+							  </Anchors>
+							  <FontHeight>
+								<AbsValue val="10" />
+							  </FontHeight>
+							  <Color r="1" g="1" b="1" />
+							  
+							</FontString>
+						  </Layer>
+						</Layers>
+					</Frame>	
+					
+				</Frames>
+			</Frame>
+			
+			
+			<ScrollFrame name="$parentScrollBar" inherits="FauxScrollFrameTemplate">
+				<Size>
+					<AbsDimension x="10" y="154"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPRIGHT" relativePoint="TOPRIGHT">
+						<Offset>
+							<AbsDimension x="-45" y="-115"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnVerticalScroll>
+						FauxScrollFrame_OnVerticalScroll(16, this:GetScript("OnShow")); 
+					</OnVerticalScroll>
+					<OnShow>
+						local scrollFrame = this;
+						local owner = this:GetParent();
+						if not(owner.IconCatagory) then
+							owner.IconCatagory = 1;
+						end
+						if not(owner.IconSubcatagory) then
+							owner.IconSubcatagory = 1;
+						end
+						local category = tostring(GHM_IconSubcategories[ GHM_IconCategories[owner.IconCatagory]][owner.IconSubcatagory]); --GHI_IconCatagory] ][GHI_IconSubcatagory]);
+						
+						if catagory == "" then return; end	
+						local lines = floor(((table.getn(GHM_StockIcons[ category  ])+1) / 4)+0.5)-3;
+						if lines == nil then return; end
+						FauxScrollFrame_Update(scrollFrame,lines,1,16);	
+						local offset = FauxScrollFrame_GetOffset(scrollFrame);
+						
+						local iconFrame = this:GetParent();
+						for i=1,16 do 
+							
+							local frame = getglobal(iconFrame:GetName().."_PopupButton"..i);
+							local texture = GHM_StockIcons[category][offset*4 + i];
+							if texture == nil then
+								SetItemButtonTexture(frame, "");
+								frame.path = "";
+							else
+								SetItemButtonTexture(frame, "Interface\\Icons\\"..texture);
+								frame.path = "Interface\\Icons\\"..texture;
+							end
+						end 
+						
+					</OnShow>
+				</Scripts>
+			</ScrollFrame>
+			
+			<CheckButton name="$parent_PopupButton1" inherits="GHM_ChooseIconMenuButtonTemplate" id="1">
+				<Anchors>
+					<Anchor point="TOPLEFT">
+						<Offset>
+							<AbsDimension x="25" y="-115"/>
+						</Offset>
+					</Anchor>
+				</Anchors> <Scripts> <OnClick> this:GetParent().from.IconChoosen(this:GetParent().from,this) </OnClick> </Scripts>
+			</CheckButton>
+			<CheckButton name="$parent_PopupButton2" inherits="GHM_ChooseIconMenuButtonTemplate" id="2">
+				<Anchors>
+					<Anchor point="LEFT" relativeTo="$parent_PopupButton1" relativePoint="RIGHT">
+						<Offset>
+							<AbsDimension x="2" y="0"/>
+						</Offset>
+					</Anchor>
+				</Anchors> <Scripts> <OnClick> this:GetParent().from.IconChoosen(this:GetParent().from,this) </OnClick> </Scripts>
+			</CheckButton>
+			<CheckButton name="$parent_PopupButton3" inherits="GHM_ChooseIconMenuButtonTemplate" id="3">
+				<Anchors>
+					<Anchor point="LEFT" relativeTo="$parent_PopupButton2" relativePoint="RIGHT">
+						<Offset>
+							<AbsDimension x="2" y="0"/>
+						</Offset>
+					</Anchor>
+				</Anchors> <Scripts> <OnClick> this:GetParent().from.IconChoosen(this:GetParent().from,this) </OnClick> </Scripts>
+			</CheckButton>
+			<CheckButton name="$parent_PopupButton4" inherits="GHM_ChooseIconMenuButtonTemplate" id="4">
+				<Anchors>
+					<Anchor point="LEFT" relativeTo="$parent_PopupButton3" relativePoint="RIGHT">
+						<Offset>
+							<AbsDimension x="2" y="0"/>
+						</Offset>
+					</Anchor>
+				</Anchors> <Scripts> <OnClick> this:GetParent().from.IconChoosen(this:GetParent().from,this) </OnClick> </Scripts>
+			</CheckButton>
+			<CheckButton name="$parent_PopupButton5" inherits="GHM_ChooseIconMenuButtonTemplate" id="5">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parent_PopupButton1" relativePoint="BOTTOMLEFT">
+						<Offset>
+							<AbsDimension x="0" y="-2"/>
+						</Offset>
+					</Anchor>
+				</Anchors> <Scripts> <OnClick> this:GetParent().from.IconChoosen(this:GetParent().from,this) </OnClick> </Scripts>
+			</CheckButton>
+			<CheckButton name="$parent_PopupButton6" inherits="GHM_ChooseIconMenuButtonTemplate" id="6">
+				<Anchors>
+					<Anchor point="LEFT" relativeTo="$parent_PopupButton5" relativePoint="RIGHT">
+						<Offset>
+							<AbsDimension x="2" y="0"/>
+						</Offset>
+					</Anchor>
+				</Anchors> <Scripts> <OnClick> this:GetParent().from.IconChoosen(this:GetParent().from,this) </OnClick> </Scripts>
+			</CheckButton>
+			<CheckButton name="$parent_PopupButton7" inherits="GHM_ChooseIconMenuButtonTemplate" id="7">
+				<Anchors>
+					<Anchor point="LEFT" relativeTo="$parent_PopupButton6" relativePoint="RIGHT">
+						<Offset>
+							<AbsDimension x="2" y="0"/>
+						</Offset>
+					</Anchor>
+				</Anchors> <Scripts> <OnClick> this:GetParent().from.IconChoosen(this:GetParent().from,this) </OnClick> </Scripts>
+			</CheckButton>
+			<CheckButton name="$parent_PopupButton8" inherits="GHM_ChooseIconMenuButtonTemplate" id="8">
+				<Anchors>
+					<Anchor point="LEFT" relativeTo="$parent_PopupButton7" relativePoint="RIGHT">
+						<Offset>
+							<AbsDimension x="2" y="0"/>
+						</Offset>
+					</Anchor>
+				</Anchors> <Scripts> <OnClick> this:GetParent().from.IconChoosen(this:GetParent().from,this) </OnClick> </Scripts>
+			</CheckButton>
+			<CheckButton name="$parent_PopupButton9" inherits="GHM_ChooseIconMenuButtonTemplate" id="9">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parent_PopupButton5" relativePoint="BOTTOMLEFT">
+						<Offset>
+							<AbsDimension x="0" y="-2"/>
+						</Offset>
+					</Anchor>
+				</Anchors> <Scripts> <OnClick> this:GetParent().from.IconChoosen(this:GetParent().from,this) </OnClick> </Scripts>
+			</CheckButton>
+			<CheckButton name="$parent_PopupButton10" inherits="GHM_ChooseIconMenuButtonTemplate" id="10">
+				<Anchors>
+					<Anchor point="LEFT" relativeTo="$parent_PopupButton9" relativePoint="RIGHT">
+						<Offset>
+							<AbsDimension x="2" y="0"/>
+						</Offset>
+					</Anchor>
+				</Anchors> <Scripts> <OnClick> this:GetParent().from.IconChoosen(this:GetParent().from,this) </OnClick> </Scripts>
+			</CheckButton>
+			<CheckButton name="$parent_PopupButton11" inherits="GHM_ChooseIconMenuButtonTemplate" id="11">
+				<Anchors>
+					<Anchor point="LEFT" relativeTo="$parent_PopupButton10" relativePoint="RIGHT">
+						<Offset>
+							<AbsDimension x="2" y="0"/>
+						</Offset>
+					</Anchor>
+				</Anchors> <Scripts> <OnClick> this:GetParent().from.IconChoosen(this:GetParent().from,this) </OnClick> </Scripts>
+			</CheckButton>
+			<CheckButton name="$parent_PopupButton12" inherits="GHM_ChooseIconMenuButtonTemplate" id="12">
+				<Anchors>
+					<Anchor point="LEFT" relativeTo="$parent_PopupButton11" relativePoint="RIGHT">
+						<Offset>
+							<AbsDimension x="2" y="0"/>
+						</Offset>
+					</Anchor>
+				</Anchors> <Scripts> <OnClick> this:GetParent().from.IconChoosen(this:GetParent().from,this) </OnClick> </Scripts>
+			</CheckButton>
+			<CheckButton name="$parent_PopupButton13" inherits="GHM_ChooseIconMenuButtonTemplate" id="13">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parent_PopupButton9" relativePoint="BOTTOMLEFT">
+						<Offset>
+							<AbsDimension x="0" y="-2"/>
+						</Offset>
+					</Anchor>
+				</Anchors> <Scripts> <OnClick> this:GetParent().from.IconChoosen(this:GetParent().from,this) </OnClick> </Scripts>
+			</CheckButton>
+			<CheckButton name="$parent_PopupButton14" inherits="GHM_ChooseIconMenuButtonTemplate" id="14">
+				<Anchors>
+					<Anchor point="LEFT" relativeTo="$parent_PopupButton13" relativePoint="RIGHT">
+						<Offset>
+							<AbsDimension x="2" y="0"/>
+						</Offset>
+					</Anchor>
+				</Anchors> <Scripts> <OnClick> this:GetParent().from.IconChoosen(this:GetParent().from,this) </OnClick> </Scripts>
+			</CheckButton>
+			<CheckButton name="$parent_PopupButton15" inherits="GHM_ChooseIconMenuButtonTemplate" id="15">
+				<Anchors>
+					<Anchor point="LEFT" relativeTo="$parent_PopupButton14" relativePoint="RIGHT">
+						<Offset>
+							<AbsDimension x="2" y="0"/>
+						</Offset>
+					</Anchor>
+				</Anchors> <Scripts> <OnClick> this:GetParent().from.IconChoosen(this:GetParent().from,this) </OnClick> </Scripts>
+			</CheckButton>
+			<CheckButton name="$parent_PopupButton16" inherits="GHM_ChooseIconMenuButtonTemplate" id="16">
+				<Anchors>
+					<Anchor point="LEFT" relativeTo="$parent_PopupButton15" relativePoint="RIGHT">
+						<Offset>
+							<AbsDimension x="2" y="0"/>
+						</Offset>
+					</Anchor>
+				</Anchors> <Scripts> <OnClick> this:GetParent().from.IconChoosen(this:GetParent().from,this) </OnClick> </Scripts>
+			</CheckButton>
+			
+			
+			
+			
+			<Button name="$parentClose" inherits="UIPanelButtonTemplate" hidden="false" text="Close">		
+				<Size>
+				  <AbsDimension x="60" y="25" />
+				</Size>
+				<Anchors>
+				  <Anchor point="BOTTOM"  relativePoint="BOTTOM" >
+					<Offset>
+					  <AbsDimension x="0" y="15" />
+					</Offset>
+				  </Anchor>
+				</Anchors>
+				<Scripts>
+				  <OnClick>
+					this:GetParent():Hide();
+				  </OnClick>
+				</Scripts>
+				<NormalTexture file="Interface\Buttons\UI-Panel-Button-Up">
+				  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+				</NormalTexture>
+				<PushedTexture file="Interface\Buttons\UI-Panel-Button-Down">
+				  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+				</PushedTexture>
+				<DisabledTexture file="Interface\Buttons\UI-Panel-Button-Down">
+				  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+				</DisabledTexture>
+				<HighlightTexture file="Interface\Buttons\UI-Panel-Button-Highlight" alphaMode="ADD">
+				  <TexCoords left="0" right="0.625" top="0" bottom="0.6875" />
+				</HighlightTexture>
+				<ButtonText name="$parentText">
+				  <FontHeight>
+					<AbsValue val="10" />
+				  </FontHeight>
+				</ButtonText>
+				<NormalFont inherits="GameFontNormal" font="Fonts\FRIZQT__.TTF">
+				  <FontHeight>
+					<AbsValue val="12" />
+				  </FontHeight>
+				  <Color r="1" g="0.8196079" b="0" />
+				  <Shadow>
+					<Color r="0" g="0" b="0" />
+					<Offset>
+					  <AbsDimension x="1" y="-1" />
+					</Offset>
+				  </Shadow>
+				</NormalFont>
+				<HighlightFont inherits="GameFontHighlight" font="Fonts\FRIZQT__.TTF">
+				  <FontHeight>
+					<AbsValue val="12" />
+				  </FontHeight>
+				  <Color r="1" g="1" b="1" />
+				  <Shadow>
+					<Color r="0" g="0" b="0" />
+					<Offset>
+					  <AbsDimension x="1" y="-1" />
+					</Offset>
+				  </Shadow>
+				</HighlightFont>
+				<DisabledFont inherits="GameFontDisable" font="Fonts\FRIZQT__.TTF">
+				  <FontHeight>
+					<AbsValue val="12" />
+				  </FontHeight>
+				  <Color r="1" g="0.8196079" b="0" />
+				  <Shadow>
+					<Color r="0" g="0" b="0" />
+					<Offset>
+					  <AbsDimension x="1" y="-1" />
+					</Offset>
+				  </Shadow>
+				</DisabledFont>
+			</Button> 
+			
+			
+		</Frames>
+
+	</Frame> 
+	
+	<Frame name="GHM_RoundIconPiece_Template" virtual="true">
+		<Size>
+			<AbsDimension x="32" y="32" />
+		</Size>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="$parentIcon" file="Interface\Icons\INV_Misc_QuestionMark">
+					<Size>
+						<AbsDimension x="58" y="58"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset>
+								<AbsDimension x="0" y="0"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</Texture>
+			</Layer>
+		</Layers>
+	</Frame>
+	
+	<Frame name="GHM_RoundIcon_Template"  virtual="true">
+		<Size>
+		  <AbsDimension x="64" y="64" />
+		</Size>
+		<Anchors>
+		  <Anchor point="CENTER" relativePoint="CENTER">
+			<Offset>
+			  <AbsDimension x="0" y="0" />
+			</Offset>
+		  </Anchor>
+		</Anchors>
+		<Frames>
+			
+		</Frames>
+		<Scripts>
+			<OnLoad>
+				GHM_SetUpRoundIcon();
+			</OnLoad>
+		</Scripts>
+	</Frame>
+	<Frame name="GHM_RoundIconHalf_Template"  virtual="true">
+		<Size>
+		  <AbsDimension x="32" y="32" />
+		</Size>
+		<Anchors>
+		  <Anchor point="CENTER" relativePoint="CENTER">
+			<Offset>
+			  <AbsDimension x="0" y="0" />
+			</Offset>
+		  </Anchor>
+		</Anchors>
+		<Frames>
+			
+		</Frames>
+		<Scripts>
+			<OnLoad>
+				GHM_SetUpRoundIcon(true);
+			</OnLoad>
+		</Scripts>
+	</Frame>	
+	
+	<Button name="GHM_Header_Template" virtual="true">
+		<Size>
+			<AbsDimension x="155" y="24"/>
+		</Size>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="$parentLeft" file="Interface\FriendsFrame\WhoFrame-ColumnTabs">
+					<Size>
+						<AbsDimension x="5" y="24"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT"/>
+					</Anchors>
+					<TexCoords left="0" right="0.078125" top="0" bottom="0.75"/>
+				</Texture>
+				<Texture name="$parentMiddle" file="Interface\FriendsFrame\WhoFrame-ColumnTabs">
+					<Size>
+						<AbsDimension x="148" y="24"/>
+					</Size>
+					<Anchors>
+						<Anchor point="LEFT" relativeTo="$parentLeft" relativePoint="RIGHT"/>
+					</Anchors>
+					<TexCoords left="0.078125" right="0.90625" top="0" bottom="0.75"/>
+				</Texture>
+				<Texture name="$parentRight" file="Interface\FriendsFrame\WhoFrame-ColumnTabs">
+					<Size>
+						<AbsDimension x="4" y="24"/>
+					</Size>
+					<Anchors>
+						<Anchor point="LEFT" relativeTo="$parentMiddle" relativePoint="RIGHT"/>
+					</Anchors>
+					<TexCoords left="0.90625" right="0.96875" top="0" bottom="0.75"/>
+				</Texture>
+			</Layer>
+		</Layers>
+		<Scripts>
+			<OnClick>
+				
+			</OnClick>
+		</Scripts>
+		<ButtonText inherits="GameFontHighlightSmall" text="">
+			<Anchors>
+				<Anchor point="LEFT">
+					<Offset>
+						<AbsDimension x="8" y="0"/>
+					</Offset>
+				</Anchor>
+			</Anchors>
+		</ButtonText>
+	</Button>
+	
+	<ScrollFrame name="GHM_ListScrollBar_Template" virtual="true" inherits="FauxScrollFrameTemplate">
+		<Size>
+			<AbsDimension x="10" y="154"/>
+		</Size>
+		<Scripts>
+			<OnVerticalScroll>
+				FauxScrollFrame_OnVerticalScroll(this:GetParent().lines*3, this:GetScript("OnShow")); --
+			</OnVerticalScroll>
+			<OnShow>
+				
+				
+			</OnShow>
+		</Scripts>
+	</ScrollFrame>
+	
+	
+	<!--  Frame templates -->
+	<Frame name="GHM_StdTheme_Template"  frameStrata="DIALOG" movable="true" enableMouse="true" hidden="true" virtual="true" >
+		<Size>
+		  <AbsDimension x="600" y="500" />
+		</Size>
+		<Anchors>
+		  <Anchor point="CENTER" relativePoint="CENTER">
+			<Offset>
+			  <AbsDimension x="0" y="0" />
+			</Offset>
+		  </Anchor>
+		</Anchors>
+		<Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background" edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
+		  <BackgroundInsets>
+			<AbsInset left="11" right="12" top="12" bottom="11" />
+		  </BackgroundInsets>
+		  <TileSize>
+			<AbsValue val="32" />
+		  </TileSize>
+		  <EdgeSize>
+			<AbsValue val="32" />
+		  </EdgeSize>
+		</Backdrop>
+		<Layers>
+		  <Layer>
+			<Texture name="$parentTitleBorder" hidden="false" file="Interface\DialogFrame\UI-DialogBox-Header">
+			  <Size>
+				<AbsDimension x="200" y="32" />
+			  </Size>
+			  <Anchors>
+				<Anchor point="TOP">
+				  <Offset>
+					<AbsDimension x="0" y="7" />
+				  </Offset>
+				</Anchor>
+			  </Anchors>
+			  <TexCoords left="0.2" right="0.8" top="0" bottom="0.6" />
+			</Texture>
+			<FontString name="$parentTitleString" hidden="false" font="Fonts\FRIZQT__.TTF" text="">
+			  <Size>
+				<AbsDimension x="180" y="0" />
+			  </Size>
+			  <Anchors>
+				<Anchor point="TOP">
+				  <Offset>
+					<AbsDimension x="0" y="-4" />
+				  </Offset>
+				</Anchor>
+			  </Anchors>
+			  <FontHeight>
+				<AbsValue val="12" />
+			  </FontHeight>
+			  <Color r="1" g="0.8196079" b="0" />
+			  <Shadow>
+				<Color r="0" g="0" b="0" />
+				<Offset>
+				  <AbsDimension x="1" y="-1" />
+				</Offset>
+			  </Shadow>
+			</FontString>
+					  
+		  </Layer>
+		</Layers>
+		<Frames>
+			<Button name="$parentOk" inherits="GHM_Button_Template" hidden="false" text="Ok">		
+				<Anchors>
+				  <Anchor point="BOTTOM"  relativePoint="BOTTOM" >
+					<Offset>
+					  <AbsDimension x="-50" y="35" />
+					</Offset>
+				  </Anchor>
+				</Anchors>
+			</Button>
+			<Button name="$parentCancel" inherits="GHM_Button_Template" hidden="false" text="Cancel">		
+				<Anchors>
+				  <Anchor point="BOTTOM"  relativePoint="BOTTOM" >
+					<Offset>
+					  <AbsDimension x="50" y="35" />
+					</Offset>
+				  </Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						this:GetParent():Hide();
+					</OnClick>
+				</Scripts>
+			</Button>
+		</Frames>
+		<Scripts>
+			<OnLoad>
+				this.frame_x = this:GetWidth() - 100;
+				this.frame_y = this:GetHeight() - 100;
+				this.frame_offset_x = 50;
+				this.frame_offset_y = 30;
+				
+			</OnLoad>
+		</Scripts>
+	</Frame>  
+	
+	<Frame name="GHM_SpellBookTheme_Template" frameStrata="DIALOG" enableMouse="true" hidden="true" virtual="true" >
+		<Size>
+			<AbsDimension x="384" y="350"/>  <!-- x="384" y="512"/> -->
+		</Size>
+		<Anchors>
+		  <Anchor point="CENTER" relativePoint="CENTER">
+			<Offset>
+			  <AbsDimension x="0" y="0" />
+			</Offset>
+		  </Anchor>
+		</Anchors>
+		<HitRectInsets>
+			<AbsInset left="0" right="30" top="0" bottom="70"/>
+		</HitRectInsets>
+		<Layers>
+			<Layer level="BACKGROUND">
+				
+			</Layer>
+			<Layer level="ARTWORK">
+				<Texture file="Interface\Spellbook\UI-SpellbookPanel-TopLeft" >
+					<Size>
+						<AbsDimension x="256" y="256"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT"/>
+					</Anchors>
+				</Texture>
+				<Texture file="Interface\Spellbook\UI-SpellbookPanel-TopRight">
+					<Size>
+						<AbsDimension x="128" y="256"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPRIGHT"/>
+					</Anchors>
+				</Texture>
+				<Texture name="$parentBotLeft" file="Interface\Spellbook\UI-SpellbookPanel-BotLeft">
+					<Size>
+						<AbsDimension x="256" y="256"/>
+					</Size>
+					<Anchors>
+						<Anchor point="BOTTOMLEFT"/>
+					</Anchors>
+				</Texture>
+				<Texture name="$parentBotRight" file="Interface\Spellbook\UI-SpellbookPanel-BotRight">
+					<Size>
+						<AbsDimension x="128" y="256"/>
+					</Size>
+					<Anchors>
+						<Anchor point="BOTTOMRIGHT"/>
+					</Anchors>
+				</Texture>
+				<FontString name="$parentTitleString" inherits="GameFontNormal" text="">
+					<Anchors>
+						<Anchor point="TOP">
+							<Offset>
+								<AbsDimension x="6" y="-18"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				
+			</Layer>
+		</Layers>
+		<Frames>
+			<Frame name="$parentIcon" inherits="GHM_RoundIcon_Template">
+				<Anchors>
+					<Anchor point="TOPLEFT">
+						<Offset>
+							<AbsDimension x="10.3" y="-7.1"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Frame>
+			<Button name="$parentCloseButton" inherits="UIPanelCloseButton">
+				<Anchors>
+					<Anchor point="CENTER" relativePoint="TOPRIGHT">
+						<Offset>
+							<AbsDimension x="-44" y="-25"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						this:GetParent():Hide();
+					</OnClick>
+				</Scripts>
+			</Button>
+			
+			<Button name="$parentOk" inherits="GHM_Button_Template" hidden="false" text="Ok">		
+				<Size>
+				  <AbsDimension x="70" y="20" />
+				</Size> 
+				<Anchors>
+				  <Anchor point="BOTTOM"  relativePoint="BOTTOM" >
+					<Offset>
+					  <AbsDimension x="-60" y="90" />
+					</Offset>
+				  </Anchor>
+				</Anchors>
+			</Button>
+			<Button name="$parentCancel" inherits="GHM_Button_Template" hidden="false" text="Cancel">		
+				<Size>
+				  <AbsDimension x="70" y="20" />
+				</Size> 
+				<Anchors>
+				  <Anchor point="BOTTOM"  relativePoint="BOTTOM" >
+					<Offset>
+					  <AbsDimension x="35" y="90" />
+					</Offset>
+				  </Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						this:GetParent():Hide();
+					</OnClick>
+				</Scripts>
+			</Button>
+		</Frames>
+		<Scripts>
+			<OnLoad>
+				this.frame_offset_x = 30;
+				this.frame_offset_y = 85;
+				
+				this.frame_x = 300;
+				this.frame_y = this:GetHeight() - (this.frame_offset_y + 120);
+				
+			</OnLoad>
+		</Scripts>
+	</Frame>
+	
+	<Frame name="GHM_WizardTheme_Template"  frameStrata="DIALOG" movable="true" enableMouse="true" hidden="true" virtual="true" >
+		<Size>
+		  <AbsDimension x="600" y="500" />
+		</Size>
+		<Anchors>
+		  <Anchor point="CENTER" relativePoint="CENTER">
+			<Offset>
+			  <AbsDimension x="0" y="0" />
+			</Offset>
+		  </Anchor>
+		</Anchors>
+		<Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background" edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
+		  <BackgroundInsets>
+			<AbsInset left="11" right="12" top="12" bottom="11" />
+		  </BackgroundInsets>
+		  <TileSize>
+			<AbsValue val="32" />
+		  </TileSize>
+		  <EdgeSize>
+			<AbsValue val="32" />
+		  </EdgeSize>
+		</Backdrop>
+		<Layers>
+		  <Layer>
+			<Texture name="$parentTitleBorder" hidden="false" file="Interface\DialogFrame\UI-DialogBox-Header">
+			  <Size>
+				<AbsDimension x="200" y="32" />
+			  </Size>
+			  <Anchors>
+				<Anchor point="TOP">
+				  <Offset>
+					<AbsDimension x="0" y="7" />
+				  </Offset>
+				</Anchor>
+			  </Anchors>
+			  <TexCoords left="0.2" right="0.8" top="0" bottom="0.6" />
+			</Texture>
+			<FontString name="$parentTitleString" hidden="false" font="Fonts\FRIZQT__.TTF" text="">
+			  <Size>
+				<AbsDimension x="180" y="0" />
+			  </Size>
+			  <Anchors>
+				<Anchor point="TOP">
+				  <Offset>
+					<AbsDimension x="0" y="-4" />
+				  </Offset>
+				</Anchor>
+			  </Anchors>
+			  <FontHeight>
+				<AbsValue val="12" />
+			  </FontHeight>
+			  <Color r="1" g="0.8196079" b="0" />
+			  <Shadow>
+				<Color r="0" g="0" b="0" />
+				<Offset>
+				  <AbsDimension x="1" y="-1" />
+				</Offset>
+			  </Shadow>
+			</FontString>
+					  
+		  </Layer>
+		</Layers>
+		<Frames>
+			<Button name="$parentBack" inherits="GHM_Button_Template" hidden="false" text="Back">		
+				<Anchors>
+				  <Anchor point="BOTTOMRIGHT"  relativePoint="BOTTOMRIGHT" >
+					<Offset>
+					  <AbsDimension x="-195" y="15" />
+					</Offset>
+				  </Anchor>
+				</Anchors>
+				<Scripts>
+				  <OnLoad>
+					this:SetText("\60 Back");
+				  </OnLoad>
+				</Scripts>
+			</Button>
+			<Button name="$parentNext" inherits="GHM_Button_Template" hidden="false" text="Next">		
+				<Anchors>
+				  <Anchor point="BOTTOMRIGHT"  relativePoint="BOTTOMRIGHT" >
+					<Offset>
+					  <AbsDimension x="-105" y="15" />
+					</Offset>
+				  </Anchor>
+				</Anchors>
+				<Scripts>
+				  <OnLoad>
+					this:SetText("Next \62");
+				  </OnLoad>
+				</Scripts>
+			</Button>
+			<Button name="$parentCancel" inherits="GHM_Button_Template" hidden="false" text="Cancel">		
+				<Anchors>
+				  <Anchor point="BOTTOMRIGHT"  relativePoint="BOTTOMRIGHT" >
+					<Offset>
+					  <AbsDimension x="-15" y="15" />
+					</Offset>
+				  </Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						this:GetParent():Hide();
+					</OnClick>
+				</Scripts>
+			</Button>
+			<Button name="$parentCloseButton" inherits="UIPanelCloseButton">
+				<Anchors>
+					<Anchor point="CENTER" relativePoint="TOPRIGHT">
+						<Offset>
+							<AbsDimension x="-25" y="-25"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						this:GetParent():Hide();
+					</OnClick>
+				</Scripts>
+			</Button>
+			
+		</Frames>
+		<Scripts>
+			<OnLoad>
+				this.frame_x = this:GetWidth() - 100;
+				this.frame_y = this:GetHeight() - 100;
+				this.frame_offset_x = 50;
+				this.frame_offset_y = 30;
+				
+			</OnLoad>
+		</Scripts>
+	</Frame>  
+	
+	<!--<Frame name="GHM_AuctionTheme_Template" toplevel="true" parent="UIParent" enableMouse="true" hidden="true">
+		<Size>
+			<AbsDimension x="832" y="447"/>
+		</Size>
+		<Anchors>
+			<Anchor point="TOPLEFT">
+				<Offset>
+					<AbsDimension x="0" y="-104"/>
+				</Offset>
+			</Anchor>
+		</Anchors>
+		<Layers>
+			<Layer level="BACKGROUND">
+			</Layer>
+			<Layer level="ARTWORK">
+				<Texture name="$parentTopLeft" file="Interface\AuctionFrame\UI-AuctionFrame-Browse-TopLeft">
+					<Size>
+						<AbsDimension x="256" y="256"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT"/>
+					</Anchors>
+				</Texture>
+				<Texture name="$parentTop" file="Interface\AuctionFrame\UI-AuctionFrame-Browse-Top">
+					<Size>
+						<AbsDimension x="320" y="256"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset>
+								<AbsDimension x="256" y="0"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</Texture>
+				<Texture name="$parentTopRight" file="Interface\AuctionFrame\UI-AuctionFrame-Browse-TopRight">
+					<Size>
+						<AbsDimension x="256" y="256"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT" relativeTo="$parentTop" relativePoint="TOPRIGHT">
+							<Offset>
+								<AbsDimension x="0" y="0"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</Texture>
+				<Texture name="$parentBotLeft" file="Interface\AuctionFrame\UI-AuctionFrame-Browse-BotLeft">
+					<Size>
+						<AbsDimension x="256" y="256"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset>
+								<AbsDimension x="0" y="-256"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</Texture>
+				<Texture name="$parentBot" file="Interface\AuctionFrame\UI-AuctionFrame-Browse-Bot">
+					<Size>
+						<AbsDimension x="320" y="256"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset>
+								<AbsDimension x="256" y="-256"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</Texture>
+				<Texture name="$parentBotRight" file="Interface\AuctionFrame\UI-AuctionFrame-Browse-BotRight">
+					<Size>
+						<AbsDimension x="256" y="256"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT" relativeTo="$parentBot" relativePoint="TOPRIGHT">
+							<Offset>
+								<AbsDimension x="0" y="0"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</Texture>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Frame name="$parentIcon" inherits="GHM_RoundIcon_Template">
+				<Anchors>
+					<Anchor point="TOPLEFT">
+						<Offset>
+							<AbsDimension x="8" y="-8"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Frame>
+			
+			<Button name="AuctionFrameTab1" inherits="AuctionTabTemplate" id="1" text="BROWSE">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT">
+						<Offset>
+							<AbsDimension x="15" y="11"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
+			<Button name="AuctionFrameTab2" inherits="AuctionTabTemplate" id="2" text="BIDS">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="AuctionFrameTab1" relativePoint="TOPRIGHT">
+						<Offset>
+							<AbsDimension x="-8" y="0"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
+			<Button name="AuctionFrameTab3" inherits="AuctionTabTemplate" id="3" text="AUCTIONS">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="AuctionFrameTab2" relativePoint="TOPRIGHT">
+						<Offset>
+							<AbsDimension x="-8" y="0"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
+			
+			<Button name="AuctionFrameCloseButton" inherits="UIPanelCloseButton">
+				<Anchors>
+					<Anchor point="TOPRIGHT">
+						<Offset>
+							<AbsDimension x="3" y="-8"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
+		</Frames>
+		<Scripts>
+			<OnLoad function=""/>
+			<OnShow function=""/>
+			<OnHide>
+			</OnHide>
+		</Scripts>
+	</Frame> -->
+	
+	
+	
+	<!--  Object templates -->
+	<Frame name="GHM_Text_Template" virtual="true" >
+		<Size>
+		  <AbsDimension x="300" y="80" />
+		</Size>     
+		<Layers>
+		  <Layer>
+			<FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="">
+			  <Anchors>
+				<Anchor point="TOPLEFT" />
+				<Anchor point="BOTTOMRIGHT" />
+			  </Anchors>
+			  <FontHeight>
+				<AbsValue val="11" />
+			  </FontHeight>
+			  <Color r="1" g="0.8196079" b="0" />
+			  <Shadow>
+				<Color r="0" g="0" b="0" />
+				<Offset>
+				  <AbsDimension x="1" y="-1" />
+				</Offset>
+			  </Shadow>
+			</FontString>
+		  </Layer>
+		</Layers>
+		<Scripts>
+		  <OnLoad>
+			local f = this;
+			f.Force = function(data)
+				if type(data) == "string" then
+					getglobal(f:GetName().."Label"):SetText(data);
+				elseif data == nil then
+					getglobal(f:GetName().."Label"):SetText("");
+				end
+			end
+		  </OnLoad>
+		</Scripts>
+	</Frame>
+	
+	<EditBox name="GHM_Editbox_Template" letters="127" hidden="false" autoFocus="false" historyLines="10" virtual="true">
+		<Size>
+			<AbsDimension x="220" y="32"></AbsDimension>
+		</Size>
+		<Anchors>
+			<Anchor point="TOP" relativePoint="Top">
+				<Offset>
+					<AbsDimension x="0" y="-40"></AbsDimension>
+				</Offset>
+			</Anchor>
+		</Anchors>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="$parentLeft" file="Interface\ChatFrame\UI-ChatInputBorder-Left">
+					<Size>
+						<AbsDimension x="190" y="32"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT"  >
+							<Offset>
+								<AbsDimension x="-15" y="0" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</Texture>
+				<Texture name="$parentRight" file="Interface\ChatFrame\UI-ChatInputBorder-Right">
+					<Size>
+						<AbsDimension x="14" y="32"/>
+					</Size>
+					<Anchors>
+						<Anchor point="RIGHT">
+							<Offset>
+								<AbsDimension x="10" y="0"></AbsDimension>
+							</Offset>
+						</Anchor>
+					</Anchors>
+					<TexCoords left="0.9375" right="1.0" top="0" bottom="1.0"/>
+				</Texture>
+				<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Right">
+					<Size>
+						<AbsDimension x="1" y="32"/>
+					</Size>
+					<Anchors>
+						<Anchor point="LEFT" relativeTo="$parentLeft" relativePoint="RIGHT">
+							<Offset>
+								<AbsDimension x="0" y="0"/>
+							</Offset>
+						</Anchor>
+						<Anchor point="RIGHT" relativeTo="$parentRight" relativePoint="LEFT">
+							<Offset>
+								<AbsDimension x="0" y="0"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+					<TexCoords left="0" right="0.9375" top="0" bottom="1.0"/>
+				</Texture>
+			</Layer>
+		</Layers>
+		<Scripts>
+			<OnEscapePressed>
+				this:ClearFocus();
+			</OnEscapePressed>
+			<OnClick>
+				this:SetFocus();
+			</OnClick>
+			<OnEnterPressed>
+							
+			</OnEnterPressed>
+			<OnTextChanged>
+				if this.numbersOnly == true then
+					this.main.SetLabel(this.label,tonumber(this:GetText()));
+				else
+					this.main.SetLabel(this.label,this:GetText());
+				end
+				if this.onchange then
+					this.onchange();
+				end
+			</OnTextChanged>
+			<OnLoad>
+				local f = this;
+				f.Force = function(data)
+					if type(data) == "string" or type(data) == "number" then
+						f:SetText(data);
+					end
+				end
+				f.Clear = function()
+					f:SetText("");
+				end
+			</OnLoad>
+		</Scripts>
+		<FontString inherits="ChatFontNormal"></FontString>
+		<Frames>
+			<Frame name="$parentText">
+			   
+				<Size>
+				  <AbsDimension x="120" y="20" />
+				</Size>
+				<Anchors>
+				  <Anchor point="BOTTOMLEFT"  relativePoint="TOPLEFT">
+					<Offset>
+					  <AbsDimension x="0" y="-5" />
+					</Offset>
+				  </Anchor>
+				</Anchors>
+				<Scripts>
+				  <OnClick>
+				  </OnClick>
+				</Scripts>     
+				<Layers>
+				  <Layer>
+					<FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="">
+					  <Anchors>
+						<Anchor point="TOPLEFT" />
+						<Anchor point="BOTTOMRIGHT" />
+					  </Anchors>
+					  <FontHeight>
+						<AbsValue val="11" />
+					  </FontHeight>
+					  <Color r="1" g="0.8196079" b="0" />
+					  <Shadow>
+						<Color r="0" g="0" b="0" />
+						<Offset>
+						  <AbsDimension x="1" y="-1" />
+						</Offset>
+					  </Shadow>
+					</FontString>
+				  </Layer>
+				</Layers>
+			</Frame>
+		</Frames>
+	</EditBox>
+	
+	<Slider name="GHM_StackSlider_Template" minValue="1" maxValue="6" defaultValue="1" valueStep="1" orientation="Horizontal" virtual="true">
+		<!--<FrameSkin skinid="f15d4970-d66d-444e-bb2d-1ad102c87fed" frameid="f15d4976-d66d-444e-bb2d-1ad102c87fed" />-->
+		<Size>
+		  <AbsDimension x="100" y="20" />
+		</Size>
+		<Scripts>
+			<OnLoad>
+				this:SetValueStep(1)
+				local f = this;
+				f.Force = function(data)
+					if type(data) == "number" and f.StackSliderValues then
+						for i=1,table.getn(f.StackSliderValues) do
+							if f.StackSliderValues[i] == data then
+								f:SetValue(i);
+								break;
+							end
+						end
+					end
+				end
+				f.Clear = function()
+					f:SetValue(1);
+				end
+			</OnLoad>
+			<OnValueChanged> 
+				this.StackSliderValues = {1,5,10,20,50,100}
+				this.amount = this.StackSliderValues[this:GetValue()];
+				getglobal(this:GetName().."Label2"):SetText(this.amount)
+				if not(this.main == nil) then
+					this.main.SetLabel(this.label,this.amount);		
+				end
+			</OnValueChanged>
+		</Scripts>
+		<Layers>
+		  <Layer>
+			<FontString name="$parentLabel1" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Stack size:">
+			  <Anchors>
+				<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT" >
+					<Offset>
+						<AbsDimension x="5" y="0"></AbsDimension>
+					</Offset>
+				</Anchor>
+				
+			  </Anchors>
+			  <FontHeight>
+				<AbsValue val="10" />
+			  </FontHeight>
+			  <Color r="1" g="0.8196079" b="0" />
+			</FontString>
+			<FontString name="$parentLabel2" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="1">
+			  <Anchors>
+				<Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" >
+					<Offset>
+						<AbsDimension x="-5" y="0"></AbsDimension>
+					</Offset>
+				</Anchor>
+				
+			  </Anchors>
+			  <FontHeight>
+				<AbsValue val="10" />
+			  </FontHeight>
+			  <Color r="1" g="0.8196079" b="0" />
+			</FontString>
+		  </Layer>
+		</Layers>
+
+		<Backdrop bgFile="Interface\Buttons\UI-SliderBar-Background" edgeFile="Interface\Buttons\UI-SliderBar-Border" tile="false">
+		  <BackgroundInsets>
+			<AbsInset left="20" right="20" top="20" bottom="20" />
+		  </BackgroundInsets>
+		  <TileSize>
+			<AbsValue val="8" />
+		  </TileSize>
+		  <EdgeSize>
+			<AbsValue val="8" />
+		  </EdgeSize>
+		</Backdrop>
+		<HitRectInsets>
+		  <AbsInset left="10" right="0" top="0" bottom="0" />
+		</HitRectInsets>
+		<ThumbTexture name="$parentThumb" file="Interface\Buttons\UI-SliderBar-Button-Horizontal">
+		  <Size>
+			<AbsDimension x="32" y="32" />
+		  </Size>
+		</ThumbTexture>
+		
+		
+	</Slider>
+	
+	<Slider name="GHM_TimeSlider_Template" minValue="1" maxValue="19" defaultValue="1" valueStep="1" orientation="Horizontal" virtual="true">
+		<!--<FrameSkin skinid="f15d4970-d66d-444e-bb2d-1ad102c87fed" frameid="f15d4976-d66d-444e-bb2d-1ad102c87fed" />-->
+		<Size>
+		  <AbsDimension x="140" y="20" />
+		</Size>
+		<Scripts>
+			<OnLoad>
+				this:SetValueStep(1)
+				local f = this;
+				f.Force = function(data)
+					if type(data) == "number" and f.SliderValues then
+						for i=1,table.getn(f.SliderValues) do
+							if f.SliderValues[i] == data then
+								f:SetValue(i);
+								break;
+							end
+						end
+					end
+				end
+				f.Clear = function()
+					f:SetValue(1);
+				end
+			</OnLoad>
+			<OnValueChanged> 
+				if not(this.SliderValues) then
+					this.SliderValues = {1,5,10,15,30,60,90,120,60*5,60*10,60*15,60*30,60*60,60*90,60*60*2,60*60*5,60*60*10,60*60*20,60*60*24}
+					this:SetMinMaxValues(1,19);
+				end
+				this.secs = this.SliderValues[this:GetValue()];
+				if (this.secs) == 0 then
+					getglobal(this:GetName().."Label2"):SetText("none")
+				elseif not(this.secs >= 60) then
+					getglobal(this:GetName().."Label2"):SetText(this.secs.." secs")
+				elseif not(this.secs >= 60*60) then
+					local mins = (this.secs/60)
+					getglobal(this:GetName().."Label2"):SetText(mins.." mins")
+				elseif not(this.secs >= 60*60*24) then
+					local hours = (this.secs / (60*60) );
+					getglobal(this:GetName().."Label2"):SetText(hours.." hours")
+				elseif not(this.secs >= 60*60*24*30) then
+					local days = (this.secs/ (60*60*24) );
+					getglobal(this:GetName().."Label2"):SetText(days.." days")
+				elseif not(this.secs >= 60*60*24*365) then
+					local months = (this.secs/ (60*60*24*30) );
+					getglobal(this:GetName().."Label2"):SetText(months.." months")
+				else
+					local years = (this.secs/ (60*60*24*365) );
+					getglobal(this:GetName().."Label2"):SetText(years.." years")
+				end
+				if not(this.main == nil) then
+					this.main.SetLabel(this.label,this.secs);										
+				end
+			</OnValueChanged>
+		</Scripts>
+		<Layers>
+		  <Layer>
+			<FontString name="$parentLabel1" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Time:">
+			  <Anchors>
+				<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT" >
+					<Offset>
+						<AbsDimension x="5" y="0"></AbsDimension>
+					</Offset>
+				</Anchor>
+				
+			  </Anchors>
+			  <FontHeight>
+				<AbsValue val="10" />
+			  </FontHeight>
+			  <Color r="1" g="0.8196079" b="0" />
+			</FontString>
+			<FontString name="$parentLabel2" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="0 sec">
+			  <Anchors>
+				<Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" >
+					<Offset>
+						<AbsDimension x="-5" y="0"></AbsDimension>
+					</Offset>
+				</Anchor>
+				
+			  </Anchors>
+			  <FontHeight>
+				<AbsValue val="10" />
+			  </FontHeight>
+			  <Color r="1" g="0.8196079" b="0" />
+			</FontString>
+		  </Layer>
+		</Layers>
+
+		<Backdrop bgFile="Interface\Buttons\UI-SliderBar-Background" edgeFile="Interface\Buttons\UI-SliderBar-Border" tile="false">
+		  <BackgroundInsets>
+			<AbsInset left="20" right="20" top="20" bottom="20" />
+		  </BackgroundInsets>
+		  <TileSize>
+			<AbsValue val="8" />
+		  </TileSize>
+		  <EdgeSize>
+			<AbsValue val="8" />
+		  </EdgeSize>
+		</Backdrop>
+		<HitRectInsets>
+		  <AbsInset left="10" right="0" top="0" bottom="0" />
+		</HitRectInsets>
+		<ThumbTexture name="$parentThumb" file="Interface\Buttons\UI-SliderBar-Button-Horizontal">
+		  <Size>
+			<AbsDimension x="32" y="32" />
+		  </Size>
+		</ThumbTexture>
+		
+		
+	</Slider>
+	
+	<Slider name="GHM_SlotSlider_Template" minValue="1" maxValue="17" defaultValue="1" valueStep="1" orientation="Horizontal" virtual="true">
+		<!--<FrameSkin skinid="f15d4970-d66d-444e-bb2d-1ad102c87fed" frameid="f15d4976-d66d-444e-bb2d-1ad102c87fed" />-->
+		<Size>
+		  <AbsDimension x="100" y="20" />
+		</Size>
+		<Scripts>
+			<OnLoad>
+				this:SetValueStep(1)
+				local f = this;
+				f.Force = function(data)
+					if type(data) == "number" and f.StackSliderValues then
+						for i=1,table.getn(f.StackSliderValues) do
+							if f.StackSliderValues[i] == data then
+								f:SetValue(i);
+								break;
+							end
+						end
+					end
+				end
+				f.Clear = function()
+					f:SetValue(1);
+				end
+			</OnLoad>
+			<OnValueChanged> 
+				this.StackSliderValues = {1,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36};
+				this.amount = this.StackSliderValues[this:GetValue()];
+				getglobal(this:GetName().."Label2"):SetText(this.amount.." slots")
+				if not(this.main == nil) then
+					this.main.SetLabel(this.label,this.amount);		
+				end
+			</OnValueChanged>
+		</Scripts>
+		<Layers>
+		  <Layer>
+			<FontString name="$parentLabel1" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Stack size:">
+			  <Anchors>
+				<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT" >
+					<Offset>
+						<AbsDimension x="5" y="0"></AbsDimension>
+					</Offset>
+				</Anchor>
+				
+			  </Anchors>
+			  <FontHeight>
+				<AbsValue val="10" />
+			  </FontHeight>
+			  <Color r="1" g="0.8196079" b="0" />
+			</FontString>
+			<FontString name="$parentLabel2" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="1">
+			  <Anchors>
+				<Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" >
+					<Offset>
+						<AbsDimension x="-5" y="0"></AbsDimension>
+					</Offset>
+				</Anchor>
+				
+			  </Anchors>
+			  <FontHeight>
+				<AbsValue val="10" />
+			  </FontHeight>
+			  <Color r="1" g="0.8196079" b="0" />
+			</FontString>
+		  </Layer>
+		</Layers>
+
+		<Backdrop bgFile="Interface\Buttons\UI-SliderBar-Background" edgeFile="Interface\Buttons\UI-SliderBar-Border" tile="false">
+		  <BackgroundInsets>
+			<AbsInset left="20" right="20" top="20" bottom="20" />
+		  </BackgroundInsets>
+		  <TileSize>
+			<AbsValue val="8" />
+		  </TileSize>
+		  <EdgeSize>
+			<AbsValue val="8" />
+		  </EdgeSize>
+		</Backdrop>
+		<HitRectInsets>
+		  <AbsInset left="10" right="0" top="0" bottom="0" />
+		</HitRectInsets>
+		<ThumbTexture name="$parentThumb" file="Interface\Buttons\UI-SliderBar-Button-Horizontal">
+		  <Size>
+			<AbsDimension x="32" y="32" />
+		  </Size>
+		</ThumbTexture>
+		
+		
+	</Slider>
+	
+	<Slider name="GHM_CustomSlider_Template" minValue="1" maxValue="19" defaultValue="1" valueStep="1" orientation="Horizontal" virtual="true">
+		<!--<FrameSkin skinid="f15d4970-d66d-444e-bb2d-1ad102c87fed" frameid="f15d4976-d66d-444e-bb2d-1ad102c87fed" />-->
+		<Size>
+		  <AbsDimension x="140" y="20" />
+		</Size>
+		<Scripts>
+			<OnLoad>
+				this:SetValueStep(1)
+				local f = this;
+				f.Force = function(data)
+					if type(data) == "number" and f.SliderValues then
+						for i=1,table.getn(f.SliderValues) do
+							if f.SliderValues[i] == data then
+								f:SetValue(i);
+								break;
+							end
+						end
+					end
+				end
+				f.Clear = function()
+					f:SetValue(1);
+				end
+			</OnLoad>
+			<OnValueChanged> 
+				if not(this.SliderValues) then
+					this.SliderValues = {1,2,3}
+					this:SetMinMaxValues(1,3);
+				end
+				this.val = this.SliderValues[this:GetValue()];
+				getglobal(this:GetName().."Label2"):SetText(this.val);
+				if not(this.main == nil) then
+					this.main.SetLabel(this.label,this.val);										
+				end
+			</OnValueChanged>
+		</Scripts>
+		<Layers>
+		  <Layer>
+			<FontString name="$parentLabel1" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Time:">
+			  <Anchors>
+				<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT" >
+					<Offset>
+						<AbsDimension x="5" y="0"></AbsDimension>
+					</Offset>
+				</Anchor>
+				
+			  </Anchors>
+			  <FontHeight>
+				<AbsValue val="10" />
+			  </FontHeight>
+			  <Color r="1" g="0.8196079" b="0" />
+			</FontString>
+			<FontString name="$parentLabel2" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="0 sec">
+			  <Anchors>
+				<Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" >
+					<Offset>
+						<AbsDimension x="-5" y="0"></AbsDimension>
+					</Offset>
+				</Anchor>
+				
+			  </Anchors>
+			  <FontHeight>
+				<AbsValue val="10" />
+			  </FontHeight>
+			  <Color r="1" g="0.8196079" b="0" />
+			</FontString>
+		  </Layer>
+		</Layers>
+
+		<Backdrop bgFile="Interface\Buttons\UI-SliderBar-Background" edgeFile="Interface\Buttons\UI-SliderBar-Border" tile="false">
+		  <BackgroundInsets>
+			<AbsInset left="20" right="20" top="20" bottom="20" />
+		  </BackgroundInsets>
+		  <TileSize>
+			<AbsValue val="8" />
+		  </TileSize>
+		  <EdgeSize>
+			<AbsValue val="8" />
+		  </EdgeSize>
+		</Backdrop>
+		<HitRectInsets>
+		  <AbsInset left="10" right="0" top="0" bottom="0" />
+		</HitRectInsets>
+		<ThumbTexture name="$parentThumb" file="Interface\Buttons\UI-SliderBar-Button-Horizontal">
+		  <Size>
+			<AbsDimension x="32" y="32" />
+		  </Size>
+		</ThumbTexture>
+		
+		
+	</Slider>
+	
+	
+	<CheckButton name="GHM_CheckBox_Template" inherits="OptionsCheckButtonTemplate" checked="false" virtual="true">
+		<FontString inherits="ChatFontNormal"></FontString>
+		<Frames>
+			<Frame name="$parentText">
+				<Size>
+				  <AbsDimension x="200" y="30" />
+				</Size>
+				<Anchors>
+				  <Anchor point="LEFT"  relativePoint="RIGHT">
+					<Offset>
+					  <AbsDimension x="0" y="0" />
+					</Offset>
+				  </Anchor>
+				</Anchors>
+				<Scripts>
+				  <OnClick>
+					this.main.SetLabel(this.label,this:GetChecked());	
+
+				  </OnClick>
+				</Scripts>     
+				<Layers>
+				  <Layer>
+					<FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="">
+					  <Size>
+						<AbsDimension x="140" y="30" />
+					  </Size>
+					  <FontHeight>
+						<AbsValue val="11" />
+					  </FontHeight>
+					  <Color r="1" g="0.8196079" b="0" />
+					  <Shadow>
+						<Color r="0" g="0" b="0" />
+						<Offset>
+						  <AbsDimension x="1" y="-1" />
+						</Offset>
+					  </Shadow>
+					</FontString>
+				  </Layer>
+				</Layers>
+			</Frame>
+		</Frames>
+		<Scripts>
+			<OnLoad>
+				local f = this;
+				f.Force = function(data)
+					--GHI_Message("Check button forced to "..(data or btype(data)));
+					if data == true or data == 1 then
+						f:SetChecked(true);
+					else 
+						f:SetChecked(nil);
+					end
+				end
+				f.Clear = function()
+					f:SetChecked(nil);
+					f.main.SetLabel(f.label,nil);
+				end
+			</OnLoad>
+			<OnClick>
+				this.main.SetLabel(this.label,this:GetChecked());
+				
+			</OnClick>
+		</Scripts>
+	</CheckButton>
+	
+	<Frame name="GHM_QualityDD_Template" inherits="UIDropDownMenuTemplate" enableMouse="true" virtual="true">		
+		<Scripts>
+		   <OnLoad>
+				local f = this;
+				f.Force = function(data)
+					local label2 = getglobal(f:GetName().."TextLabel");
+					if type(data) == "number" then
+						local color = ITEM_QUALITY_COLORS[data];
+						if color then
+							label2:SetText("|CFF" ..string.format("%.2x",color.r*255) .. string.format("%.2x",color.g*255) .. string.format("%.2x",color.b*255) .." "..getglobal("ITEM_QUALITY"..data.."_DESC").."|r"); 
+							f.main.SetLabel(f.label,data);
+						end
+					end
+
+				end
+				f.Clear = function()
+					local label2 = getglobal(f:GetName().."TextLabel");
+					local color = ITEM_QUALITY_COLORS[1];
+					if color then
+						label2:SetText("|CFF" ..string.format("%.2x",color.r*255) .. string.format("%.2x",color.g*255) .. string.format("%.2x",color.b*255) .." "..getglobal("ITEM_QUALITY1_DESC").."|r"); 
+						f.main.SetLabel(f.label,1);
+					end
+				end
+				
+				UIDropDownMenu_Initialize(this, function()
+					for i = 0,6 do	
+						info            = {};
+						local text = getglobal("ITEM_QUALITY" .. i .. "_DESC");
+						local color = ITEM_QUALITY_COLORS[i];
+						info.text       = "|CFF" ..string.format("%.2x",color.r*255) .. string.format("%.2x",color.g*255) .. string.format("%.2x",color.b*255) .." ".. text.."|r";
+						info.value      = i;
+						info.owner		= this:GetParent();
+						info.func       = function()
+											local color = ITEM_QUALITY_COLORS[this.value];
+											getglobal( (this.owner):GetName().."TextLabel"):SetText("|CFF" ..string.format("%.2x",color.r*255) .. string.format("%.2x",color.g*255) .. string.format("%.2x",color.b*255) .." "..getglobal("ITEM_QUALITY" ..this.value.. "_DESC").."|r"); 
+											this.owner.main.SetLabel(this.owner.label,this.value);	
+										end;
+						UIDropDownMenu_AddButton(info);
+					end	
+				   
+				end);
+		   </OnLoad>
+	   
+		   <OnClick>
+			   ToggleDropDownMenu(1, nil, DropDownMenu, DropDownMenuButton, 0, 0);
+		   </OnClick>
+	    </Scripts>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<FontString name="$parentLabel" inherits="GameFontNormalSmall" text="Quality:" justifyH="RIGHT">
+					<Anchors>
+						<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT">
+							<Offset>
+								<AbsDimension x="20" y="0"/>
+							</Offset>
+						</Anchor>
+						
+					</Anchors>
+					<FontHeight>
+						<AbsValue val="11" />
+					</FontHeight>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Frame name="$parentText">
+				<!--<FrameSkin skinid="dcb143e1-a4ab-4e7c-b934-1efa40101d21" frameid="2d508885-59c2-4f83-ae10-27aaad48391b" />-->
+				<Size>
+				  <AbsDimension x="100" y="14" />
+				</Size>						
+				<Anchors>
+				  <Anchor point="LEFT"  relativePoint="LEFT">
+					<Offset>
+					  <AbsDimension x="25" y="3" />
+					</Offset>
+				  </Anchor>
+				</Anchors>
+				<Scripts>
+				  <OnClick>
+				  </OnClick>
+				</Scripts>     
+				<Layers>
+				  <Layer>
+					<FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="|CFFFFFFFF Common|r">
+					  <Anchors>
+						<Anchor point="TOPLEFT" />
+						<Anchor point="BOTTOMRIGHT" />
+					  </Anchors>
+					  <FontHeight>
+						<AbsValue val="10" />
+					  </FontHeight>
+					  <Color r="1" g="1" b="1" />
+					  
+					</FontString>
+				  </Layer>
+				</Layers>
+			</Frame>	
+			
+		</Frames>
+	</Frame>
+			
+	<Frame name="GHM_CustomDD_Template" inherits="UIDropDownMenuTemplate" enableMouse="true" virtual="true">		
+		<Scripts>
+		    <OnLoad>
+				
+				UIDropDownMenu_Initialize(this, function()
+					local t = nil;
+					if this:GetObjectType() == "Frame" then 
+						t = this:GetParent().tempdata;
+						this.dataTable = t;
+					else
+						t = this:GetParent().dataTable;
+					end
+					if type(t) == "table" then
+						for i = 1,table.getn(t) do	
+							info            = {};
+							info.text       = t[i];
+							info.value      = i;
+							info.owner		= this:GetParent();
+							info.func       = function()
+												local text = this.owner.dataTable[this.value];
+												getglobal( (this.owner):GetName().."TextLabel"):SetText(text); 
+												if this.owner.returnIndex == true then
+													this.owner.main.SetLabel(this.owner.label,this.value);	
+												else
+													this.owner.main.SetLabel(this.owner.label,text);
+												end
+											end;
+							UIDropDownMenu_AddButton(info);
+						end	
+						
+					end
+				end);
+								
+				local f = this;
+				f.Force = function(data)
+					local label = getglobal(f:GetName().."TextLabel");
+					if type(data) == "number" then
+						local text = f.dataTable[data];
+						if text then
+							label:SetText(text); 
+							if f.returnIndex == true then
+								f.main.SetLabel(f.label,data);
+							else
+								f.main.SetLabel(f.label,text);
+							end
+						end
+					elseif type(data) == "string" then
+						for i = 1,table.getn(f.dataTable) do
+							if data == f.dataTable[i] then
+								label:SetText(data); 
+								if f.returnIndex == true then
+									f.main.SetLabel(f.label,i);
+								else
+									f.main.SetLabel(f.label,data);
+								end
+							end
+						end
+					end
+				end
+				f.Clear = function()
+					local label = getglobal(f:GetName().."TextLabel");
+					
+					local text = f.dataTable[1];
+					if text then
+						label:SetText(text); 
+						if f.returnIndex == true then
+							f.main.SetLabel(f.label,1);
+						else
+							f.main.SetLabel(f.label,text);
+						end
+					end
+					
+				end
+				
+			</OnLoad>
+	   
+			<OnClick>
+				ToggleDropDownMenu(1, nil, DropDownMenu, DropDownMenuButton, 0, 0);
+			</OnClick>
+	   </Scripts>
+	   <Layers>
+			<Layer level="BACKGROUND">
+				<FontString name="$parentLabel" inherits="GameFontNormalSmall" text="" justifyH="RIGHT">
+					<Anchors>
+						<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT">
+							<Offset>
+								<AbsDimension x="20" y="0"/>
+							</Offset>
+						</Anchor>
+						
+					</Anchors>
+					<FontHeight>
+						<AbsValue val="11" />
+					</FontHeight>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Frame name="$parentText">
+				<Size>
+				  <AbsDimension x="100" y="14" />
+				</Size>						
+				<Anchors>
+				  <Anchor point="LEFT"  relativePoint="LEFT">
+					<Offset>
+					  <AbsDimension x="25" y="3" />
+					</Offset>
+				  </Anchor>
+				</Anchors>
+				<Scripts>
+				  <OnClick>
+				  </OnClick>
+				</Scripts>     
+				<Layers>
+				  <Layer>
+					<FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="">
+					  <Anchors>
+						<Anchor point="TOPLEFT" />
+						<Anchor point="BOTTOMRIGHT" />
+					  </Anchors>
+					  <FontHeight>
+						<AbsValue val="10" />
+					  </FontHeight>
+					  <Color r="1" g="1" b="1" />
+					  
+					</FontString>
+				  </Layer>
+				</Layers>
+			</Frame>	
+			
+		</Frames>
+	</Frame>
+	
+	<Button name="GHM_Button_Template" inherits="UIPanelButtonTemplate" text="Test" hidden="false" virtual="true">		
+		<Size>
+		  <AbsDimension x="80" y="30" />
+		</Size>
+		<Scripts>
+		  <OnLoad>
+			
+		  </OnLoad>
+		</Scripts>
+		
+	</Button>
+			
+	<Button name="GHM_Icon_Template" inherits="ItemButtonTemplate" virtual="true">
+		<Frames>
+			<Frame name="$parentText">
+				<Size>
+				  <AbsDimension x="100" y="20" />
+				</Size>
+				<Anchors>
+				  <Anchor point="BOTTOMLEFT"  relativePoint="TOPLEFT">
+					<Offset>
+					  <AbsDimension x="0" y="0" />
+					</Offset>
+				  </Anchor>
+				</Anchors>
+				<Scripts>
+				  <OnClick>
+				  </OnClick>
+				</Scripts>     
+				<Layers>
+				  <Layer>
+					<FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="Icon:">
+					  <Anchors>
+						<Anchor point="TOPLEFT" />
+						<Anchor point="BOTTOMRIGHT" />
+					  </Anchors>
+					  <FontHeight>
+						<AbsValue val="11" />
+					  </FontHeight>
+					  <Color r="1" g="0.8196079" b="0" />
+					  <Shadow>
+						<Color r="0" g="0" b="0" />
+						<Offset>
+						  <AbsDimension x="1" y="-1" />
+						</Offset>
+					  </Shadow>
+					</FontString>
+				  </Layer>
+				</Layers>
+			</Frame>
+		</Frames>
+		<Scripts>
+			<OnClick>
+				local main = this.main;
+				if not(main.iconFrame) then
+					main.iconFrame = CreateFrame("Frame",main:GetName().."_IconFrame",this,"GHM_IconFrame_Template");
+				end
+				local frame = main.iconFrame;
+				frame.from = this;
+				if this.framealign == "l" then
+					frame:SetPoint("RIGHT", main, "LEFT", 0, 0);
+				elseif this.framealign == "r" then
+					frame:SetPoint("LEFT", main, "RIGHT", 0, 0);
+				else
+					frame:SetPoint("CENTER", main, "CENTER", 0, 0);
+					frame:SetFrameLevel(this:GetFrameLevel()+10);
+				end
+				frame:Show();
+			</OnClick>
+			<OnLoad>
+				SetItemButtonTexture(this, "Interface\\Icons\\INV_Misc_QuestionMark");
+				this.IconChoosen = function(orig,icon)
+					
+					-- Keep the exact icon path as data.  On Turtle/Vanilla the
+					-- texture object's GetTexture() result is not a reliable place
+					-- to recover the original path later.
+					orig.selectedPath = icon.path;
+					SetItemButtonTexture(orig,icon.path);
+					orig.main.SetLabel(orig.label,icon.path);
+					if orig.CloseOnChoosen == true then
+						icon:GetParent():Hide();
+					end
+				end
+				local f = this;
+				f.Force = function(data)
+					f.selectedPath = data;
+					SetItemButtonTexture(f,data);
+					f.main.SetLabel(f.label,data);
+				end
+				f.Clear = function()
+					
+					f.selectedPath = "Interface\\Icons\\INV_Misc_QuestionMark";
+					SetItemButtonTexture(f, "Interface\\Icons\\INV_Misc_QuestionMark");
+					f.main.SetLabel(f.label,"Interface\\Icons\\INV_Misc_QuestionMark");
+				end
+			</OnLoad>
+			<OnEnter>
+
+			</OnEnter>
+			<OnLeave>
+				
+			</OnLeave>
+			<OnHide>
+				
+			</OnHide>
+			<OnDragStart>
+				
+			</OnDragStart>
+			<OnReceiveDrag>
+				
+			</OnReceiveDrag>
+			<OnUpdate>
+
+			</OnUpdate>
+			<OnEvent>
+				
+			</OnEvent>
+		</Scripts>
+	</Button>
+			
+	<Frame name="GHM_List_Template" virtual="true" >
+		<Size>
+		  <AbsDimension x="300" y="80" />
+		</Size>     
+		<Layers>
+		  <Layer>
+			<FontString name="$parentLabel" justifyH="LEFT" font="Fonts\FRIZQT__.TTF" text="">
+			  <Anchors>
+				<Anchor point="TOPLEFT" />
+				<Anchor point="BOTTOMRIGHT" />
+			  </Anchors>
+			  <FontHeight>
+				<AbsValue val="11" />
+			  </FontHeight>
+			  <Color r="1" g="0.8196079" b="0" />
+			  <Shadow>
+				<Color r="0" g="0" b="0" />
+				<Offset>
+				  <AbsDimension x="1" y="-1" />
+				</Offset>
+			  </Shadow>
+			</FontString>
+		  </Layer>
+		</Layers>
+		<Backdrop bgFile="" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
+	      <BackgroundInsets>
+	        <AbsInset left="4" right="4" top="4" bottom="4" />
+	      </BackgroundInsets>
+	      <TileSize>
+	        <AbsValue val="16" />
+	      </TileSize>
+	      <EdgeSize>
+	        <AbsValue val="16" />
+	      </EdgeSize>
+	    </Backdrop>
+		<Frames>
+			
+		</Frames>
+		<Scripts>
+		  <OnLoad>
+			GHM_List_OnLoad();
+		  </OnLoad>
+		</Scripts>
+	</Frame>
+	
+	<Frame name="GHM_Dummy_Template" virtual="true">		
+		
+	</Frame>
+	
+	<Frame name="GHM_EditField_Template" virtual="true">
+		<Size>
+			<AbsDimension x="170" y="80"/>
+		</Size>
+		<Backdrop bgFile="Interface\Tooltips\ChatBubble-Background" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
+			<EdgeSize>
+				<AbsValue val="16"/>
+			</EdgeSize>
+			<TileSize>
+				<AbsValue val="16"/>
+			</TileSize>
+			<BackgroundInsets>
+				<AbsInset left="5" right="5" top="5" bottom="5"/>
+			</BackgroundInsets>
+		</Backdrop>
+		<Scripts>
+			<OnLoad>
+				local f = this;
+				f.Force = function(data)
+					if type(data) == "string" then
+						getglobal(f:GetName().."ScrollText"):SetText(data);
+					end
+				end
+				f.Clear = function()
+					
+					getglobal(f:GetName().."ScrollText"):SetText("");
+				end
+			</OnLoad>
+			<OnSizeChanged>
+				local f = this;
+				local scroll = getglobal(f:GetName().."Scroll");
+				local text = getglobal(f:GetName().."ScrollText");
+				scroll:SetHeight(f:GetHeight()-12);
+				scroll:SetWidth(f:GetWidth()-10);
+				text:SetWidth(f:GetWidth()-10);
+				
+			</OnSizeChanged>
+		</Scripts>
+		<Frames>
+			<ScrollFrame name="$parentScroll" inherits="UIPanelScrollFrameTemplate">
+				<Size>
+					<AbsDimension x="160" y="68"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT">
+						<Offset>
+							<AbsDimension x="5" y="-7"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnMouseDown>
+						getglobal(this:GetName().."Text"):SetFocus();
+					</OnMouseDown>
+					<OnMouseUp>
+						getglobal(this:GetName().."Text"):SetFocus();
+						
+					</OnMouseUp> 
+				</Scripts>
+				<ScrollChild>
+					<EditBox name="$parentText" letters="2048" multiLine="true" autoFocus="false">
+						<Size>
+							<AbsDimension x="160" y="100"/>
+						</Size>
+						<Scripts>
+							<OnEscapePressed>
+								this:ClearFocus();
+							</OnEscapePressed>
+							<OnTextChanged>
+								
+								local f = this:GetParent():GetParent();
+								if f and f.main then
+									f.main.SetLabel(f.label,this:GetText());
+								end
+							</OnTextChanged>
+							<OnCursorChanged>
+								local scrollBar = getglobal(this:GetParent():GetName().."ScrollBar")
+								local h = scrollBar:GetHeight();
+								
+								if (-arg2)-h-scrollBar:GetValue() > 22 then
+									scrollBar:SetValue(-arg2+ (-3.0*arg3) -h);
+								end
+							    if -3 > -arg2-scrollBar:GetValue() then
+									scrollBar:SetValue(-arg2- 1.5*arg3);
+								end
+							</OnCursorChanged>
+						</Scripts>
+						<FontString inherits="GameFontHighlight"/>
+					</EditBox>
+				</ScrollChild>
+			</ScrollFrame>
+		</Frames>
+	</Frame>
+	
+	<CheckButton name="GHM_ImageButton_Template" checked="false" virtual="true"> <!-- used as part of ImageList -->
+		<Size>
+			<AbsDimension x="74" y="74"/>
+		</Size>
+		<Layers>
+			<Layer level="BORDER">
+				<Texture name="$parentIconTexture">
+					<Size>
+						<AbsDimension x="74" y="74"/>
+					</Size>
+					<Anchors>
+						<Anchor point="CENTER">
+							<Offset>
+								<AbsDimension x="0" y="0"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</Texture>				
+			</Layer>
+		</Layers> 
+		<Scripts>
+			<OnLoad>
+				this:SetCheckedTexture("Interface\\Buttons\\UI-Quickslot-Depress")
+			</OnLoad>
+			<OnClick>
+				if not(this:GetChecked()) then
+					this.f.Clear()
+				else
+					this.f.main.SetLabel(this.f.label,this.path);
+					this.f.Force(this.i);
+					--this:SetChecked(true)			
+				end
+			</OnClick>
+		</Scripts>
+		<NormalTexture name="$parentNormalTexture" file="Interface\Buttons\UI-Quickslot2">
+			<Size>
+				<AbsDimension x="128" y="128"/>
+			</Size>
+			<Anchors>
+				<Anchor point="CENTER">
+					<Offset>
+						<AbsDimension x="0" y="-1"/>
+					</Offset>
+				</Anchor>
+			</Anchors>
+		</NormalTexture>
+		<PushedTexture file="Interface\Buttons\UI-Quickslot-Depress"/>
+		<HighlightTexture file="Interface\Buttons\ButtonHilight-Square" alphaMode="ADD"/>
+	</CheckButton>
+	
+	<ScrollFrame name="GHM_ImageList_Template" inherits="UIPanelScrollFrameTemplate" virtual="true">
+		<Size>
+			<AbsDimension x="20" y="20"/>
+		</Size>
+		<Scripts>
+			<OnLoad>
+				local f = this;
+				f.images = {};
+				f.numFramesCreated = 0;
+				f.selected = 0;
+				f.scaleX = 1
+				f.scaleY = 1
+				f.Force = function(data) -- select one with specific path
+					if type(data) == "string" or type(data)== "number" then
+						for i,img in pairs(f.images) do
+							local imgF = getglobal(f:GetName().."Img"..i);
+							if imgF then
+								if type(img)=="table" and (img.p == data or i==data) then
+									-- select number x
+									imgF:SetChecked(true);
+								else
+									-- else hide
+									imgF:SetChecked(nil);
+								end
+							end
+						end
+					end
+				end
+				f.Clear = function()
+					-- clear selection
+					f.selected = 0;
+					for i=1,f.numFramesCreated do
+						getglobal(f:GetName().."Img"..i):SetChecked(nil);
+					end
+				end
+				
+				f.SetScale = function(x,y) assert(type(x)=="number" and type(y)=="number","Scale must be a number")
+					f.scaleX = x;
+					f.scaleY = y;
+					f.SetImages(f.images)
+				end
+				
+				f.SetImages = function(imgList) --print("Total of ",table.getn(imgList))
+					local scroll = getglobal(f:GetName().."ScrollChildFrame");
+										
+					scroll:SetWidth(f:GetWidth());
+					
+					local numPrLine = floor(f:GetWidth()/((74*f.scaleX)));
+					if numPrLine*74*f.scaleX +(numPrLine-1)*10 > f:GetWidth() then
+						numPrLine = numPrLine-1;
+					end
+					--local numLines = ceil(table.getn(imgList)/numPrLine)	
+					--print(numPrLine," pr line")
+					--scroll:SetHeight((numLines*(74))) --+10))-10);	
+					
+					f.images = imgList;
+					
+					for i=1,table.getn(imgList) do --print("Creating img ",i)
+						local imgF;
+						local x,y,p = imgList[i].x or 256,imgList[i].y or 256,imgList[i].p or "";
+						if f.numFramesCreated >= i then
+							imgF = getglobal(f:GetName().."Img"..i);
+						else 
+							imgF = CreateFrame("CheckButton",f:GetName().."Img"..i,scroll,"GHM_ImageButton_Template"); --
+							imgF.i = i;
+							imgF.f = f;
+							f.numFramesCreated = i;
+						end
+						
+						imgF:SetChecked(false);
+												
+						local icon = _G[imgF:GetName().."IconTexture"];
+						icon:SetTexture(p);
+						imgF.path = p;
+						
+						--local scale = max(x,y)/128;			
+						local scale = max(x/(128*f.scaleX),y/(128*f.scaleY))
+						icon:SetWidth((x/ scale * (37/64)));
+						icon:SetHeight((y/ scale * (37/64)));	
+						
+						imgF:SetWidth(74*f.scaleX);
+						imgF:SetHeight(74*f.scaleY);
+						getglobal(imgF:GetName().."NormalTexture"):SetWidth(128*f.scaleX)
+						getglobal(imgF:GetName().."NormalTexture"):SetHeight(128*f.scaleY)
+						
+						imgF:ClearAllPoints()
+						if i == 1 then --print("first");
+							imgF:SetPoint("TOPLEFT",scroll, "TOPLEFT", 0, 0);
+						elseif mod(i,numPrLine) == 1 then --print("new line");
+							imgF:SetPoint("TOP",getglobal(f:GetName().."Img"..(i-numPrLine)), "BOTTOM", 0, -10);
+						else --print("next");
+							imgF:SetPoint("LEFT",getglobal(f:GetName().."Img"..(i-1)), "RIGHT", 10, 0);
+						end
+						
+						
+						
+						imgF:Show();
+						prevImgF = imgF
+					end
+					for i = table.getn(imgList)+1,f.numFramesCreated do
+						local pf = getglobal(f:GetName().."Img"..i)
+						if pf then pf:Hide() end
+					end
+				end
+			</OnLoad>
+		</Scripts>
+		<ScrollChild>
+			<Frame name="$parentScrollChildFrame">
+				<Size>
+					<AbsDimension x="10" y="10"/>
+				</Size>
+				<Frames>
+					
+				</Frames>
+					
+			</Frame>
+		</ScrollChild>
+	</ScrollFrame>
+	
+</Ui>
+
+
+
+	

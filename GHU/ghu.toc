@@ -1,0 +1,27 @@
+## Interface: 11200
+## Title: Gryphonheart UI
+## Version: 0.3
+## Notes: Hooking of the Blizzard frames for other addons
+## SavedVariablesPerCharacter: GHU_MiscData
+
+
+ghu.lua
+ghu_tabs.lua
+
+ghu_npc.lua
+ghu_mailbox.lua
+ghu_achievement.lua
+ghu_loot.lua
+ghu_prof.lua
+ghu_cast.lua
+ghu_skill.lua
+ghu_book.lua
+ghu_ql.lua
+ghu_talent.lua
+ghu_craft.lua
+ghu_talk.lua
+ghu_talk.xml
+ghu_buff.lua
+ghu_target.lua
+
+ghu_test.lua

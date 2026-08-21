@@ -1,0 +1,6 @@
+
+<Bindings>
+  <Binding name="GHI_TOGGLE" description="Default description" header="GHI">
+    GHI_ToggleBackpack();
+  </Binding>
+</Bindings>

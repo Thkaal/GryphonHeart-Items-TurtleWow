@@ -1,0 +1,957 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/ C:\Projects\WoW\Bin\Interface\FrameXML\UI.xsd">
+	
+	
+	
+	<script file="ghi.lua"></script>
+	<script file="ghi_container.lua"></script>
+	<script file="ghi_links.lua"></script>
+	<script file="ghi_communication.lua"></script>
+	<script file="ghi_createitem.lua"></script>
+	<script file="ghi_useitem.lua"></script>
+	<script file="ghi_trade.lua"></script>
+	<script file="ghi_buff.lua"></script>
+	<script file="ghi_icons.lua"></script>
+	<script file="ghi_effect.lua"></script>
+	<script file="ghi_book.lua"></script>
+	<script file="ghi_cursor.lua"></script>
+	<script file="ghi_actionbar.lua"></script>
+	
+	
+	<script file="ghi_officialitems.lua"></script>
+	<script file="ghi_compatibility.lua"></script>
+	<script file="ghi_ghm_menu.lua"></script>
+	
+	
+	
+	
+	<Frame name="GHI_MF">
+  		<Scripts>
+    			<OnLoad>
+      				GHI_OnLoad();
+    			</OnLoad>
+    			<OnEvent>
+      				GHI_OnEvent();
+    			</OnEvent>
+  		</Scripts>
+	</Frame>
+	
+	
+	
+	
+	
+	<Button name="GHIContainerFrameItemButtonTemplate" inherits="ItemButtonTemplate" hidden="true" virtual="true">
+		<Anchors>
+			<Anchor point="BOTTOMRIGHT">
+				<Offset>
+					<AbsDimension x="0" y="0"/>
+				</Offset>
+			</Anchor>
+		</Anchors>
+		<Frames>
+			<Model name="$parentCooldown" inherits="CooldownFrameTemplate"/>
+		</Frames>
+		<Scripts>
+			<OnClick>
+				if ( not ( GHI_IsModifierKeyDown() or IsShiftKeyDown() ) ) then
+					GHI_ContainerFrameItemButton_OnClick(arg1);
+				end
+				-- Vanilla 1.12 has no PostClick script; run modified-click handling here.
+				GHI_ContainerFrameItemButton_OnModifiedClick(arg1);
+			</OnClick>
+			<OnLoad>
+				--ContainerFrameItemButton_OnLoad();
+				GHI_ContainerFrameItemButton_OnLoad();
+			</OnLoad>
+			<OnEnter>
+				GHI_ContainerFrameItemButton_OnEnter(this);
+			</OnEnter>
+			<OnLeave>
+				this.updateTooltip = nil;
+				GameTooltip:Hide();
+				--ResetCursor();
+			</OnLeave>
+			<OnHide>
+				if ( this.hasStackSplit and (this.hasStackSplit == 1) ) then
+					StackSplitFrame:Hide();
+				end
+				
+			</OnHide>
+			<OnShow>
+				if this:GetName() == "GHIContainerFrame1" then
+					GHI_BackpackButton:SetChecked(true);
+				end
+			</OnShow>
+			<OnDragStart>
+				if ( not ( GHI_IsModifierKeyDown() or IsShiftKeyDown() ) ) then
+					GHI_ContainerFrameItemButton_OnClick(arg1);
+				end
+				
+			</OnDragStart>
+			<OnDragStop>
+				GHI_ContainerFrameItemButton_OnDragStop();
+			</OnDragStop>
+			<OnReceiveDrag>
+				
+			</OnReceiveDrag>
+			<OnUpdate>
+				GHI_ContainerFrameItemButton_OnUpdate(arg1); --
+			</OnUpdate>
+			<OnEvent>
+				if ( GameTooltip:IsOwned(this) ) then
+					GHI_ContainerFrameItemButton_OnEnter(this);
+				end
+			</OnEvent>
+		</Scripts>
+	</Button>
+	
+	
+	<Frame name="GHIContainerFrameTemplate" frameStrata="MEDIUM" toplevel="true" movable="true" enableMouse="true" hidden="true" virtual="true">
+
+		<Layers>
+			<Layer level="BACKGROUND">
+                <Texture name="$parentPortrait">
+                    <Size>
+                        <AbsDimension x="40" y="40"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="7" y="-5"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </Texture>
+            </Layer>
+			<Layer level="ARTWORK">
+				<Texture name="$parentBackgroundTop" file="Interface\ContainerFrame\UI-Bag-Components">
+					<Size>
+						<AbsDimension x="256" y="512"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPRIGHT" relativeTo="$parent">
+							<Offset>
+								<AbsDimension x="0" y="0"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</Texture>
+				<Texture name="$parentBackgroundMiddle1" file="Interface\ContainerFrame\UI-Bag-Components">
+					<Size>
+						<AbsDimension x="256" y="512"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOP" relativeTo="$parentBackgroundTop" relativePoint="BOTTOM"/>
+					</Anchors>
+					<TexCoords left="0" right="1" top="0.3515625" bottom="0.8515625"/>
+				</Texture>
+				<Texture name="$parentBackgroundMiddle2" file="Interface\ContainerFrame\UI-Bag-Components" hidden="true">
+					<Size>
+						<AbsDimension x="256" y="256"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOP" relativeTo="$parentBackgroundMiddle1" relativePoint="BOTTOM"/>
+					</Anchors>
+					<TexCoords left="0" right="1" top="0.353515625" bottom="0.8515625"/>
+				</Texture>
+				<Texture name="$parentBackgroundBottom" file="Interface\ContainerFrame\UI-Bag-Components">
+					<Size>
+						<AbsDimension x="256" y="10"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOP" relativeTo="$parentBackgroundMiddle1" relativePoint="BOTTOM"/>
+					</Anchors>
+					<TexCoords left="0" right="1" top="0.330078125" bottom="0.349609375"/>
+				</Texture>
+				<FontString name="$parentName" inherits="GameFontHighlight">
+					<Size>
+						<AbsDimension x="112" y="12"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset>
+								<AbsDimension x="47" y="-10"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<Texture name="$parentBackground1Slot" file="Interface\ContainerFrame\UI-Bag-1Slot" hidden="true">
+					<Size>
+						<AbsDimension x="99" y="74"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPRIGHT">
+							<Offset>
+								<AbsDimension x="0" y="0"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+					<TexCoords left="0" right="0.7734375" top="0" bottom="0.578125"/>
+				</Texture>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Frame name="$parentMoneyFrame" inherits="SmallMoneyFrameTemplate" hidden="true">
+				<Anchors>
+					<Anchor point="TOPRIGHT" relativeTo="$parent" relativePoint="TOPRIGHT">
+						<Offset>
+							<AbsDimension x="-2" y="-216"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Frame>
+			<Button name="$parentItem1" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem2" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem3" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem4" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem5" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem6" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem7" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem8" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem9" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem10" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem11" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem12" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem13" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem14" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem15" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem16" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem17" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem18" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem19" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem20" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem21" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem22" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem23" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem24" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem25" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem26" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem27" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem28" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem29" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem30" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem31" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem32" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem33" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem34" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem35" inherits="GHIContainerFrameItemButtonTemplate"/>
+			<Button name="$parentItem36" inherits="GHIContainerFrameItemButtonTemplate"/>
+
+			<Button name="$parentPortraitButton">
+				<Size>
+					<AbsDimension x="40" y="40"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT">
+						<Offset>
+							<AbsDimension x="7" y="-5"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnEnter>
+						GameTooltip:SetOwner(this, "ANCHOR_LEFT");
+						
+						GameTooltip:AppendText(" "..NORMAL_FONT_COLOR_CODE.."( Gryphonheart Items )"..FONT_COLOR_CODE_CLOSE);
+						
+					</OnEnter>
+					<OnLeave>
+						GameTooltip:Hide();
+					</OnLeave>
+				</Scripts>
+			</Button>
+			<Button name="$parentCloseButton" inherits="UIPanelCloseButton">
+				<Anchors>
+					<Anchor point="TOPRIGHT" relativeTo="$parent" relativePoint="TOPRIGHT">
+						<Offset>
+							<AbsDimension x="0" y="-1"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						this:GetParent():Hide();
+						if this:GetParent():GetName() == "GHIContainerFrame1" then
+							--GHI_BackpackButton:SetChecked(false);
+						end
+					</OnClick>
+				</Scripts>
+			</Button>
+		</Frames>
+		<Scripts>
+			<OnEvent>
+				GHI_ContainerFrame_OnEvent();
+			</OnEvent>
+			<OnLoad>
+				GHI_ContainerFrame_OnLoad();
+				
+			</OnLoad>
+			<OnHide>
+				GHI_ContainerFrame_OnHide();
+				if this:GetName() == "GHIContainerFrame1" then
+					GHI_BackpackButton:SetChecked(false); 
+				end
+			</OnHide>
+			<OnShow>
+				GHI_ContainerFrame_OnShow();
+				if this:GetName() == "GHIContainerFrame1" then
+					GHI_BackpackButton:SetChecked(true); 
+				end
+			</OnShow>
+		</Scripts>
+	</Frame>
+	
+	
+	<Frame name="GHIContainerFrame1" inherits="GHIContainerFrameTemplate" frameStrata="HIGH" toplevel="true" parent="UIParent" id="100" hidden="true" moveable="true"/>
+	<Frame name="GHIContainerFrame2" inherits="GHIContainerFrameTemplate" frameStrata="HIGH" toplevel="true" parent="UIParent" id="200" hidden="true" moveable="true"/>
+	<Frame name="GHIContainerFrame3" inherits="GHIContainerFrameTemplate" frameStrata="HIGH" toplevel="true" parent="UIParent" id="200" hidden="true" moveable="true"/>
+	
+	<!--<Button name="GHI_DummySlot" inherits="GHIContainerFrameItemButtonTemplate"/>-->
+	
+	<Button name="GHIClickOverlayer" toplevel="false" alpha="0" frameStrata="BACKGROUND" movable="true" enableMouse="true" hidden="true" parent="UIParent">
+		<Size>
+			<AbsDimension x="2000" y="1200"/>
+		</Size>
+		<Anchors>
+			<Anchor point="CENTER">
+				<Offset>
+					<AbsDimension x="0" y="0"/>
+				</Offset>
+			</Anchor>
+		</Anchors>
+		<Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background" edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
+	      <BackgroundInsets>
+	        <AbsInset left="11" right="12" top="12" bottom="11" />
+	      </BackgroundInsets>
+	      <TileSize>
+	        <AbsValue val="32" />
+	      </TileSize>
+	      <EdgeSize>
+	        <AbsValue val="32" />
+	      </EdgeSize>
+	    </Backdrop>
+		<Scripts>
+			<OnLoad>
+		       this:RegisterForClicks("LeftButtonUp", "RightButtonDown");
+		    </OnLoad>
+			<OnEscapePressed>
+				
+			</OnEscapePressed>
+			<OnClick>
+				GHI_ClickOverlayOnClick();
+			</OnClick>
+			<OnEnterPressed>
+							
+			</OnEnterPressed>
+
+			
+		</Scripts>
+	</Button>
+	
+	<Frame name="GHI_CursorIcon" hidden="true" toplevel="true" frameStrata="DIALOG" movable="false" parent="UIParent">
+	    <!--<FrameSkin skinid="dcb143e1-a4ab-4e7c-b934-1efa40101d21" frameid="2d508883-59c2-4f83-ae10-27aaad48391b" />-->
+	    <Size>
+	      <AbsDimension x="32" y="32" />
+	    </Size>
+	    <Anchors>
+	      <Anchor point="Center" relativePoint="Center">
+	        <Offset>
+	          <AbsDimension x="0" y="0" />
+	        </Offset>
+	      </Anchor>
+	    </Anchors>
+	    <Layers>
+			<Layer level="ARTWORK">
+				<Texture name="$parentTexture" file="Interface\Icons\INV_Spear_02">
+					<Size>
+						<AbsDimension x="32" y="32"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset>
+								<AbsDimension x="0" y="0"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+					<TexCoords left="0.075" right="0.925" top="0.075" bottom="0.925"/>
+				</Texture>
+			</Layer>
+			<Layer level="BACKGROUND">
+				<Texture name="$parentBorder" file="Interface\Buttons\UI-Quickslot">
+					<Size>
+						<AbsDimension x="52" y="52"/>
+					</Size>
+					<Anchors>
+						<Anchor point="CENTER" relativePoint="CENTER" relativeTo="$parentTexture">
+							<Offset>
+								<AbsDimension x="0" y="0"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+					<TexCoords left="0.075" right="0.925" top="0.075" bottom="0.925"/>
+				</Texture>
+			</Layer>
+		</Layers>
+    </Frame>
+	
+	<Frame name="GHI_ContainerButtons">
+	  <Frames>
+		<Button name="GHI_CreateItemButton" inherits="UIPanelButtonTemplate" text="GHI_NEW_1LETTER" parent="GHIContainerFrame1">		
+			<Size>
+			  <AbsDimension x="20" y="20" />
+			</Size>
+			<Anchors>
+			  <Anchor point="TOPLEFT"  relativePoint="TOPLEFT" >
+				<Offset>
+				  <AbsDimension x="45" y="-28" />
+				</Offset>
+			  </Anchor>
+			</Anchors>
+			<Scripts>
+			  <OnClick>
+				GHI_ContainerButtonsOnClick()
+				
+			  </OnClick>
+			  <OnEnter>
+			    GameTooltip:SetOwner(this, "ANCHOR_LEFT");
+				GameTooltip:ClearLines()
+				GameTooltip:AddLine(GHI_NEW,1,0.8196079,0);
+				GameTooltip:Show()
+				this.UpdateTooltip = nil;
+			  </OnEnter>
+			  <OnLeave>
+			    GameTooltip:Hide();
+			  </OnLeave>
+			</Scripts>
+			
+		</Button>
+		<Button name="GHI_EditItemButton" inherits="UIPanelButtonTemplate" text="GHI_EDIT_1LETTER" parent="GHIContainerFrame1">		
+			<Size>
+			  <AbsDimension x="20" y="20" />
+			</Size>
+			<Anchors>
+			  <Anchor point="LEFT" relativeTo="GHI_CreateItemButton" relativePoint="RIGHT" >
+				<Offset>
+				  <AbsDimension x="2" y="0" />
+				</Offset>
+			  </Anchor>
+			</Anchors>
+			<Scripts>
+			  <OnClick>
+				GHI_ContainerButtonsOnClick()
+				
+			  </OnClick>
+			  <OnEnter>
+			    GameTooltip:SetOwner(this, "ANCHOR_LEFT");
+				GameTooltip:ClearLines()
+				GameTooltip:AddLine(GHI_EDIT,1,0.8196079,0);
+				GameTooltip:Show()
+				this.UpdateTooltip = nil;
+			  </OnEnter>
+			  <OnLeave>
+			    GameTooltip:Hide();
+			  </OnLeave>
+			</Scripts>
+			
+		</Button>
+		<Button name="GHI_CopyItemButton" inherits="UIPanelButtonTemplate" text="GHI_COPY_1LETTER" parent="GHIContainerFrame1">		
+			<Size>
+			  <AbsDimension x="20" y="20" />
+			</Size>
+			<Anchors>
+			  <Anchor point="LEFT" relativeTo="GHI_EditItemButton" relativePoint="RIGHT" >
+				<Offset>
+				  <AbsDimension x="2" y="0" />
+				</Offset>
+			  </Anchor>
+			</Anchors>
+			<Scripts>
+			  <OnClick>
+				GHI_ContainerButtonsOnClick()
+			  </OnClick>
+			  <OnEnter>
+			    GameTooltip:SetOwner(this, "ANCHOR_LEFT");
+				GameTooltip:ClearLines()
+				GameTooltip:AddLine(GHI_COPY,1,0.8196079,0);
+				GameTooltip:Show()
+				this.UpdateTooltip = nil;
+			  </OnEnter>
+			  <OnLeave>
+			    GameTooltip:Hide();
+			  </OnLeave>
+			</Scripts>
+			
+		</Button>
+		<Button name="GHI_HelpButton"  inherits="UIPanelButtonTemplate" text="?" parent="GHIContainerFrame1">		
+			<Size>
+			  <AbsDimension x="20" y="20" />
+			</Size>
+			<Anchors>
+			  <Anchor point="LEFT" relativeTo="GHI_CopyItemButton" relativePoint="RIGHT" >
+				<Offset>
+				  <AbsDimension x="2" y="0" />
+				</Offset>
+			  </Anchor>
+			</Anchors>
+			<Scripts>
+			  <OnClick>
+				GHI_ContainerButtonsOnClick()
+			  </OnClick>
+			  <OnEnter>
+			    GameTooltip:SetOwner(this, "ANCHOR_LEFT");
+				GameTooltip:ClearLines()
+				GameTooltip:AddLine(GHI_HELP,1,0.8196079,0);
+				GameTooltip:Show()
+				this.UpdateTooltip = nil;
+			  </OnEnter>
+			  <OnLeave>
+			    GameTooltip:Hide();
+			  </OnLeave>
+			</Scripts>
+			
+		</Button>
+		
+		<Button name="GHI_BackpackLeftButton" inherits="UIPanelButtonTemplate" text="Pr" parent="GHIContainerFrame1">		
+			<Size>
+			  <AbsDimension x="20" y="20" />
+			</Size>
+			<Anchors>
+			  <Anchor point="LEFT" relativeTo="GHI_HelpButton" relativePoint="RIGHT" >
+				<Offset>
+				  <AbsDimension x="8" y="0" />
+				</Offset>
+			  </Anchor>
+			</Anchors>
+			<Scripts>
+			  <OnLoad>
+				this:SetText("\60");
+			  </OnLoad>
+			  <OnClick>
+				GHI_PrevMainBagPage()
+			  </OnClick>
+			  <OnEnter>
+			    GameTooltip:SetOwner(this, "ANCHOR_LEFT");
+				GameTooltip:ClearLines()
+				GameTooltip:AddLine(GHI_PRE,1,0.8196079,0);
+				GameTooltip:Show()
+				this.UpdateTooltip = nil;
+			  </OnEnter>
+			  <OnLeave>
+			    GameTooltip:Hide();
+			  </OnLeave>
+			</Scripts>
+			
+		</Button>
+		<Button name="GHI_BackpackRightButton" inherits="UIPanelButtonTemplate" text="Ne" parent="GHIContainerFrame1">		
+			<Size>
+			  <AbsDimension x="20" y="20" />
+			</Size>
+			<Anchors>
+			  <Anchor point="LEFT" relativeTo="GHI_BackpackLeftButton" relativePoint="RIGHT" >
+				<Offset>
+				  <AbsDimension x="3" y="0" />
+				</Offset>
+			  </Anchor>
+			</Anchors>
+			<Scripts>
+			  <OnLoad>
+				this:SetText("\62");
+			  </OnLoad>
+			  <OnClick>
+				GHI_NextMainBagPage()
+			  </OnClick>
+			  <OnEnter>
+			    GameTooltip:SetOwner(this, "ANCHOR_LEFT");
+				GameTooltip:ClearLines()
+				GameTooltip:AddLine(GHI_NE,1,0.8196079,0);
+				GameTooltip:Show()
+				this.UpdateTooltip = nil;
+			  </OnEnter>
+			  <OnLeave>
+			    GameTooltip:Hide();
+			  </OnLeave>
+			</Scripts>
+			
+		</Button>
+		
+		<Button name="GHI_ExportItemButton"  inherits="UIPanelButtonTemplate" text="GHI_EXPORT_1LETTER" parent="GHIContainerFrame1">		
+			<Size>
+			  <AbsDimension x="20" y="20" />
+			</Size>
+			<Anchors>
+			  <Anchor point="BOTTOM" relativeTo="GHI_CopyItemButton" relativePoint="TOP" >
+				<Offset>
+				  <AbsDimension x="-12" y="2" />
+				</Offset>
+			  </Anchor>
+			</Anchors>
+			<Scripts>
+			  <OnClick>
+				GHI_ContainerButtonsOnClick()
+			  </OnClick>
+			  <OnEnter>
+			    GameTooltip:SetOwner(this, "ANCHOR_LEFT");
+				GameTooltip:ClearLines()
+				GameTooltip:AddLine(GHI_EXPORT,1,0.8196079,0);
+				GameTooltip:Show()
+				this.UpdateTooltip = nil;
+			  </OnEnter>
+			  <OnLeave>
+			    GameTooltip:Hide();
+			  </OnLeave>
+			</Scripts>
+			
+		</Button>
+		<Button name="GHI_ImportItemButton"  inherits="UIPanelButtonTemplate" text="GHI_IMPORT_1LETTER" parent="GHIContainerFrame1">		
+			<Size>
+			  <AbsDimension x="20" y="20" />
+			</Size>
+			<Anchors>
+			  <Anchor point="LEFT" relativeTo="GHI_ExportItemButton" relativePoint="RIGHT" >
+				<Offset>
+				  <AbsDimension x="2" y="0" />
+				</Offset>
+			  </Anchor>
+			</Anchors>
+			<Scripts>
+			  <OnClick>
+				GHI_ContainerButtonsOnClick()
+			  </OnClick>
+			  <OnEnter>
+			    GameTooltip:SetOwner(this, "ANCHOR_LEFT");
+				GameTooltip:ClearLines()
+				GameTooltip:AddLine(GHI_IMPORT,1,0.8196079,0);
+				GameTooltip:Show()
+				this.UpdateTooltip = nil;
+			  </OnEnter>
+			  <OnLeave>
+			    GameTooltip:Hide();
+			  </OnLeave>
+			</Scripts>
+			
+		</Button>
+		
+		<Button name="GHI_EquipmentDisplayButton"  inherits="UIPanelButtonTemplate" text="GHI_EDISPLAY_1LETTER" parent="GHIContainerFrame1">		
+			<Size>
+			  <AbsDimension x="20" y="20" />
+			</Size>
+			<Anchors>
+			  <Anchor point="LEFT" relativeTo="GHI_ImportItemButton" relativePoint="RIGHT" >
+				<Offset>
+				  <AbsDimension x="2" y="0" />
+				</Offset>
+			  </Anchor>
+			</Anchors>
+			<Scripts>
+			  <OnClick>
+				GHI_ContainerButtonsOnClick()
+			  </OnClick>
+			  <OnEnter>
+			    GameTooltip:SetOwner(this, "ANCHOR_LEFT");
+				GameTooltip:ClearLines()
+				GameTooltip:AddLine(GHI_EDISPLAY,1,0.8196079,0);
+				GameTooltip:Show()
+				this.UpdateTooltip = nil;
+			  </OnEnter>
+			  <OnLeave>
+			    GameTooltip:Hide();
+			  </OnLeave>
+			</Scripts>
+			
+		</Button>
+		<Button name="GHI_InspectButton"  inherits="UIPanelButtonTemplate" text="GHI_INSPECT_1LETTER" parent="GHIContainerFrame1">		
+			<Size>
+			  <AbsDimension x="20" y="20" />
+			</Size>
+			<Anchors>
+			  <Anchor point="LEFT" relativeTo="GHI_EquipmentDisplayButton" relativePoint="RIGHT" >
+				<Offset>
+				  <AbsDimension x="2" y="0" />
+				</Offset>
+			  </Anchor>
+			</Anchors>
+			<Scripts>
+			  <OnClick>
+				GHI_ContainerButtonsOnClick();
+			  </OnClick>
+			  <OnEnter>
+			    GameTooltip:SetOwner(this, "ANCHOR_LEFT");
+				GameTooltip:ClearLines()
+				GameTooltip:AddLine(GHI_INSPECT,1,0.8196079,0);
+				GameTooltip:Show()
+				this.UpdateTooltip = nil;
+			  </OnEnter>
+			  <OnLeave>
+			    GameTooltip:Hide();
+			  </OnLeave>
+			</Scripts>
+			
+		</Button>
+		
+	  
+	  </Frames>
+	</Frame>
+	
+	
+	
+	<Button name="GHI_IconButtonTemplate" virtual="true" inherits="ItemButtonTemplate">
+		
+	</Button>
+
+	
+	
+	
+	
+	<Frame name="GHI_EffectTemplate" hidden="true" setAllPoints="true" virtual="true">
+		<Scripts>
+		  <OnLoad>
+			this:SetAlpha(0)
+		  </OnLoad>
+		</Scripts>
+	</Frame>   
+
+	<Frame name="GHI_EffectFrame" parent="WorldFrame" setAllPoints="true">
+		<Frames>
+          <Frame name="$parentEffect0" inherits="GHI_EffectTemplate">
+			<Layers>
+			  <Layer level="BACKGROUND">
+				<Texture name="$parentTexture" file="Interface\Addons\GHI\texture\drunk1.tga" alphaMode="ADD" />
+			  </Layer>
+			</Layers>
+		  </Frame>
+		  <Frame name="$parentEffect1" inherits="GHI_EffectTemplate">
+			<Layers>
+			  <Layer level="BACKGROUND">
+				<Texture name="$parentTexture" file="Interface\Addons\GHI\texture\drunk1bw.tga" alphaMode="ADD" />
+			  </Layer>
+			</Layers>
+		  </Frame>
+		  <Frame name="$parentEffect2" inherits="GHI_EffectTemplate">
+			<Layers>
+			  <Layer level="BACKGROUND">
+				<Texture name="$parentTexture" file="Interface\Addons\GHI\4(dying).tga" alphaMode="ADD" />
+			  </Layer>
+			</Layers>
+		  </Frame>
+		  <Frame name="$parentEffect3" inherits="GHI_EffectTemplate">
+			<Layers>
+			  <Layer level="BACKGROUND">
+				<Texture name="$parentTexture" file="Interface\Addons\GHI\texture\drunk1bw.tga" alphaMode="ADD" />
+			  </Layer>
+			</Layers>
+		  </Frame>
+		  <Frame name="$parentEffect4" inherits="GHI_EffectTemplate">
+			<Layers>
+			  <Layer level="BACKGROUND">
+				<Texture name="$parentTexture" file="Interface\Addons\GHI\texture\4(dying).tga" alphaMode="ADD" />
+			  </Layer>
+			</Layers>
+		  </Frame>
+		  
+		</Frames>
+	</Frame>
+	
+	
+	<CheckButton name="GHI_BackpackButton" inherits="ItemButtonTemplate" parent="UIParent" id="100" frameStrata="HIGH">
+		<Size>
+			<AbsDimension x="37" y="37"/>
+		</Size>
+		<Anchors>
+			<Anchor point="CENTER">
+				<Offset>
+					<AbsDimension x="0" y="200"/>
+				</Offset>
+			</Anchor>
+		</Anchors>
+		<Frames>
+			<Model name="$parentItemAnim" inherits="ItemAnimTemplate">
+				<Anchors>
+					<Anchor point="BOTTOMRIGHT">
+						<Offset>
+							<AbsDimension x="-10" y="0"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Model>
+		</Frames>
+		<Scripts>
+			<OnLoad>
+				GHI_BackpackButtonIconTexture:SetTexture("Interface\\Icons\\INV_Misc_Bag_07_Blue");
+				this:RegisterForDrag("LeftButton")
+			</OnLoad>
+			<OnClick>
+				GHI_BackpackButton:SetChecked(false);
+				GHI_ToggleBackpack();
+			</OnClick>
+			<OnReceiveDrag>
+				
+			</OnReceiveDrag>
+			<OnEnter>
+				
+				GameTooltip:SetOwner(this, "ANCHOR_LEFT");
+				GameTooltip:ClearLines()
+				GameTooltip:AddLine(GHI_BAG_BNT, 1.0, 1.0, 1.0);
+				GameTooltip:AddLine(GHI_BAG_DRAG);
+				
+				GameTooltip:Show();
+				this.UpdateTooltip = nil;
+			</OnEnter>
+			<OnDragStart>
+				if IsShiftKeyDown() then
+					GHI_BPDrag = true;
+				else
+					GHI_BPDrag = false;
+				end
+			</OnDragStart>
+			<OnDragStop>
+				GHI_BPDrag = false;
+			</OnDragStop>
+			<OnUpdate>
+				GHI_BPIconMove();
+			</OnUpdate>
+			<OnLeave>
+				GameTooltip:Hide();
+			</OnLeave>
+			
+		</Scripts>
+		<CheckedTexture alphaMode="ADD" file="Interface\Buttons\CheckButtonHilight"/>
+	</CheckButton>
+	
+	<Frame name="GHI_Text" hidden="false" parent="TradeFrame" virtual="true">
+		<Size>
+		  <AbsDimension x="90" y="12" />
+		</Size>
+		<Layers>
+			<Layer>
+				<FontString name="$parentLabel" inherits="GameFontHighlightSmall" justifyH="LEFT" text="">
+					<FontHeight>
+						<AbsValue val="12" />
+					 </FontHeight>
+					<Color r="1" g="0.8196079" b="0" />
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset>
+								<AbsDimension x="0" y="0"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+	</Frame>
+	
+	<Frame name="GHI_PlayerTradeType1" hidden="true" inherits="GHI_Text">
+		<Anchors>
+		  <Anchor point="LEFT" relativeTo="TradePlayerItem1Name"  relativePoint="LEFT" >
+			<Offset>
+			  <AbsDimension x="0" y="-12" />
+			</Offset>
+		  </Anchor>
+		</Anchors>
+	</Frame>
+	<Frame name="GHI_PlayerTradeType2" hidden="true" inherits="GHI_Text">
+		<Anchors>
+		  <Anchor point="LEFT" relativeTo="TradePlayerItem2Name"  relativePoint="LEFT" >
+			<Offset>
+			  <AbsDimension x="0" y="-12" />
+			</Offset>
+		  </Anchor>
+		</Anchors>
+	</Frame>
+	<Frame name="GHI_PlayerTradeType3" hidden="true" inherits="GHI_Text">
+		<Anchors>
+		  <Anchor point="LEFT" relativeTo="TradePlayerItem3Name"  relativePoint="LEFT" >
+			<Offset>
+			  <AbsDimension x="0" y="-12" />
+			</Offset>
+		  </Anchor>
+		</Anchors>
+	</Frame>
+	<Frame name="GHI_PlayerTradeType4" hidden="true" inherits="GHI_Text">
+		<Anchors>
+		  <Anchor point="LEFT" relativeTo="TradePlayerItem4Name"  relativePoint="LEFT" >
+			<Offset>
+			  <AbsDimension x="0" y="-12" />
+			</Offset>
+		  </Anchor>
+		</Anchors>
+	</Frame>
+	<Frame name="GHI_PlayerTradeType5" hidden="true" inherits="GHI_Text">
+		<Anchors>
+		  <Anchor point="LEFT" relativeTo="TradePlayerItem5Name"  relativePoint="LEFT" >
+			<Offset>
+			  <AbsDimension x="0" y="-12" />
+			</Offset>
+		  </Anchor>
+		</Anchors>
+	</Frame>
+	<Frame name="GHI_PlayerTradeType6" hidden="true" inherits="GHI_Text">
+		<Anchors>
+		  <Anchor point="LEFT" relativeTo="TradePlayerItem6Name"  relativePoint="LEFT" >
+			<Offset>
+			  <AbsDimension x="0" y="-12" />
+			</Offset>
+		  </Anchor>
+		</Anchors>
+	</Frame>
+	
+	<Frame name="GHI_RecipientTradeType1" hidden="true" inherits="GHI_Text">
+		<Anchors>
+		  <Anchor point="LEFT" relativeTo="TradeRecipientItem1Name"  relativePoint="LEFT" >
+			<Offset>
+			  <AbsDimension x="0" y="-12" />
+			</Offset>
+		  </Anchor>
+		</Anchors>
+	</Frame>
+	<Frame name="GHI_RecipientTradeType2" hidden="true" inherits="GHI_Text">
+		<Anchors>
+		  <Anchor point="LEFT" relativeTo="TradeRecipientItem2Name"  relativePoint="LEFT" >
+			<Offset>
+			  <AbsDimension x="0" y="-12" />
+			</Offset>
+		  </Anchor>
+		</Anchors>
+	</Frame>
+	<Frame name="GHI_RecipientTradeType3" hidden="true" inherits="GHI_Text">
+		<Anchors>
+		  <Anchor point="LEFT" relativeTo="TradeRecipientItem3Name"  relativePoint="LEFT" >
+			<Offset>
+			  <AbsDimension x="0" y="-12" />
+			</Offset>
+		  </Anchor>
+		</Anchors>
+	</Frame>
+	<Frame name="GHI_RecipientTradeType4" hidden="true" inherits="GHI_Text">
+		<Anchors>
+		  <Anchor point="LEFT" relativeTo="TradeRecipientItem4Name"  relativePoint="LEFT" >
+			<Offset>
+			  <AbsDimension x="0" y="-12" />
+			</Offset>
+		  </Anchor>
+		</Anchors>
+	</Frame>
+	<Frame name="GHI_RecipientTradeType5" hidden="true" inherits="GHI_Text">
+		<Anchors>
+		  <Anchor point="LEFT" relativeTo="TradeRecipientItem5Name"  relativePoint="LEFT" >
+			<Offset>
+			  <AbsDimension x="0" y="-12" />
+			</Offset>
+		  </Anchor>
+		</Anchors>
+	</Frame>
+	<Frame name="GHI_RecipientTradeType6" hidden="true" inherits="GHI_Text">
+		<Anchors>
+		  <Anchor point="LEFT" relativeTo="TradeRecipientItem6Name"  relativePoint="LEFT" >
+			<Offset>
+			  <AbsDimension x="0" y="-12" />
+			</Offset>
+		  </Anchor>
+		</Anchors>
+	</Frame>
+	
+	
+</Ui>
+
+
+
+	

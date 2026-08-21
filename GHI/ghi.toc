@@ -1,0 +1,19 @@
+## Interface: 11200
+## Title: Gryphonheart Items
+## Version: 0.99.7
+## Notes: Gryphonheart Items can create custom made items for roleplaying.
+## Dependencies: GHM, GHU
+## SavedVariablesPerCharacter: GHI_ContainerData, GHI_ItemData, GHI_CooldownData, GHI_MiscData, GHI_ActionBarData, GHI_ChatData, GHI_EquipmentDisplayData
+## SavedVariables: GHI_OfficialItemData
+
+
+Localization\Localization.deDE.lua
+Localization\Localization.frFR.lua
+
+Localization\Localization.enUS.lua
+
+
+ghi.xml
+ghi_book.xml
+ghi_display.xml
+Bindings.xml
