@@ -226,11 +226,16 @@ end
 
 local GHU_BuffFrames = {};
 
--- v41: keep target GHU auras attached to the actual target frame.
--- Player GHU auras remain freely movable.
-local function GHU_PositionTargetBuffFrame()
+-- v42: target GHU auras default beneath TargetFrame, but may be moved by the player.
+-- Once moved, the saved custom position is used until positions are reset.
+local function GHU_TargetBuffHasCustomPosition()
+	return Get and Get(GHU_MiscData,"BuffPosCustom","target") == 1;
+end
+
+local function GHU_PositionTargetBuffFrame(forceDefault)
 	local frame = GHU_BuffFrames["target"];
 	if not frame or not TargetFrame then return; end
+	if not forceDefault and GHU_TargetBuffHasCustomPosition() then return; end
 	frame:ClearAllPoints();
 	frame:SetPoint("TOPLEFT", TargetFrame, "BOTTOMLEFT", 5, 0);
 end
@@ -241,7 +246,8 @@ function GHU_BuffResetAllPositions()
 	
 	for _,unit in pairs(supportedUnits) do
 		if unit == "target" then
-			GHU_PositionTargetBuffFrame();
+			Set(GHU_MiscData,"BuffPosCustom","target",nil);
+			GHU_PositionTargetBuffFrame(true);
 		else
 			Set(GHU_MiscData,"BuffPos",unit,1,x);
 			Set(GHU_MiscData,"BuffPos",unit,2,y);
@@ -254,10 +260,6 @@ function GHU_BuffResetAllPositions()
 end
 
 function GHU_BuffIconButtonIconMove(self)
-	if self and self.main and self.main.unit == "target" then
-		GHU_PositionTargetBuffFrame();
-		return;
-	end
 	if (not self.iconDrag and not iconpos) then
 		return;
 	end
@@ -279,12 +281,15 @@ function GHU_BuffIconButtonIconMove(self)
 	
 	--GHU_MiscData = GHU_MiscData or {};
 	Set(GHU_MiscData,"BuffPos",self.main.unit,{xpos+(self:GetWidth()/2), ypos-(self:GetHeight()/2)});
+	if self.main.unit == "target" then
+		Set(GHU_MiscData,"BuffPosCustom","target",1);
+	end
 	
 	-- Hide the tooltip
 	GameTooltip:Hide();
 	
 	-- Set the position
-		
+	self.main:ClearAllPoints();
 	self.main:SetPoint("TOPRIGHT", UIParent, "BOTTOMLEFT", xpos+(self:GetWidth()/2), ypos-(self:GetHeight()/2));
 end
 
@@ -311,7 +316,7 @@ function GHU_BuffFrame_Update()
 			local y = Get(GHU_MiscData,"BuffPos",unit,2) or UIParent:GetHeight()/2;
 			--print("x: ",x," y: ",y);
 			
-			if unit == "target" and TargetFrame then
+			if unit == "target" and TargetFrame and not GHU_TargetBuffHasCustomPosition() then
 				f:SetPoint("TOPLEFT", TargetFrame, "BOTTOMLEFT", 5, 0);
 			else
 				f:SetPoint("TOPRIGHT", UIParent, "BOTTOMLEFT", x, y);
