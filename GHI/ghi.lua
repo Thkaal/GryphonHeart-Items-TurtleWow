@@ -58,7 +58,7 @@ function GHI_OnLoad()
 	GHI_ContainerHookings();
 	GHI_ItemLinkHookings();
 	GHI_CommunicationHookings();
-	GHI_TradeHookings();
+	if GHI_TradeHookings then GHI_TradeHookings(); end;
 	GHI_BuffHookings();
 	if GHI_ActionbarHookings then GHI_ActionbarHookings(); end;
 	GHI_ChatLogHookings(); --]]
@@ -152,6 +152,8 @@ function GHI_OnEvent()
 		if bag and slot then
 			GHI_UseItem(bag,slot);
 		end--]]
+	elseif event == "CHAT_MSG_WHISPER" then
+		if GHI5_OnWhisperMessage and GHI5_OnWhisperMessage(arg1,arg2) then return; end
 	elseif event == "CHAT_MSG_ADDON" then
 		if GHI5_OnAddonMessage then GHI5_OnAddonMessage(arg1,arg2,arg3,arg4); end
 	end

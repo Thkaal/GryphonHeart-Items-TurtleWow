@@ -268,7 +268,7 @@ function GHI_GHD_SendDataToBuffer(metaData,data,reciever)
 	LASTSENDER = new;
 	end
 	--GHI:SendPrioritizedMessage("BULK","WHISPER",reciever,false,"GHD",metaData,data)
-	ChatThrottleLib:SendAddonMessage("BULK", metaData, tostring(data), "WHISPER", new, nil)
+	GHI:SendPrioritizedMessage("BULK","WHISPER",new,false,"GHD",metaData,tostring(data))
 end
 
 

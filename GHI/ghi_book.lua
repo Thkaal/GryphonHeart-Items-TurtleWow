@@ -240,37 +240,40 @@ function GHI_BookEdit(ID,page)
 	if rc[page] then
 		local text = rc[page];
 		PageText = "";
-		if text.text1 then
-			PageText = PageText..text.text1;
+		if type(text) == "string" then
+			PageText = text;
+		elseif type(text) == "table" then
+			if text.text1 then
+				PageText = PageText..text.text1;
+			end
+			if text.text2 then
+				PageText = PageText..text.text2;
+			end
+			if text.text3 then
+				PageText = PageText..text.text3;
+			end
+			if text.text4 then
+				PageText = PageText..text.text4;
+			end
+			if text.text5 then
+				PageText = PageText..text.text5;
+			end
+			if text.text6 then
+				PageText = PageText..text.text6;
+			end
+			if text.text7 then
+				PageText = PageText..text.text7;
+			end
+			if text.text8 then
+				PageText = PageText..text.text8;
+			end
+			if text.text9 then
+				PageText = PageText..text.text9;
+			end
+			if text.text10 then
+				PageText = PageText..text.text10;
+			end
 		end
-		if text.text2 then
-			PageText = PageText..text.text2;
-		end
-		if text.text3 then
-			PageText = PageText..text.text3;
-		end
-		if text.text4 then
-			PageText = PageText..text.text4;
-		end
-		if text.text5 then
-			PageText = PageText..text.text5;
-		end
-		if text.text6 then
-			PageText = PageText..text.text6;
-		end
-		if text.text7 then
-			PageText = PageText..text.text7;
-		end
-		if text.text8 then
-			PageText = PageText..text.text8;
-		end
-		if text.text9 then
-			PageText = PageText..text.text9;
-		end
-		if text.text10 then
-			PageText = PageText..text.text10;
-		end
-		
 	end
 	
 	local textString = GHI_HtmlToString(PageText);
@@ -1072,37 +1075,40 @@ function GHI_ShowTextForMarking(ID,page)
 	if rc[page] then
 		local text = rc[page];
 		PageText = "";
-		if text.text1 then
-			PageText = PageText..text.text1;
+		if type(text) == "string" then
+			PageText = text;
+		elseif type(text) == "table" then
+			if text.text1 then
+				PageText = PageText..text.text1;
+			end
+			if text.text2 then
+				PageText = PageText..text.text2;
+			end
+			if text.text3 then
+				PageText = PageText..text.text3;
+			end
+			if text.text4 then
+				PageText = PageText..text.text4;
+			end
+			if text.text5 then
+				PageText = PageText..text.text5;
+			end
+			if text.text6 then
+				PageText = PageText..text.text6;
+			end
+			if text.text7 then
+				PageText = PageText..text.text7;
+			end
+			if text.text8 then
+				PageText = PageText..text.text8;
+			end
+			if text.text9 then
+				PageText = PageText..text.text9;
+			end
+			if text.text10 then
+				PageText = PageText..text.text10;
+			end
 		end
-		if text.text2 then
-			PageText = PageText..text.text2;
-		end
-		if text.text3 then
-			PageText = PageText..text.text3;
-		end
-		if text.text4 then
-			PageText = PageText..text.text4;
-		end
-		if text.text5 then
-			PageText = PageText..text.text5;
-		end
-		if text.text6 then
-			PageText = PageText..text.text6;
-		end
-		if text.text7 then
-			PageText = PageText..text.text7;
-		end
-		if text.text8 then
-			PageText = PageText..text.text8;
-		end
-		if text.text9 then
-			PageText = PageText..text.text9;
-		end
-		if text.text10 then
-			PageText = PageText..text.text10;
-		end
-		
 	end
 	
 	local textString = GHI_HtmlToString(PageText);
@@ -1256,35 +1262,40 @@ function GHI_UpdateBookLinks(page,deleted)
 		for i=1,table.getn(GHI_CurrentBook) do
 			local text = GHI_CurrentBook[i];
 			local PageText = "";
-			if text.text1 then
-				PageText = PageText..text.text1;
-			end
-			if text.text2 then
-				PageText = PageText..text.text2;
-			end
-			if text.text3 then
-				PageText = PageText..text.text3;
-			end
-			if text.text4 then
-				PageText = PageText..text.text4;
-			end
-			if text.text5 then
-				PageText = PageText..text.text5;
-			end
-			if text.text6 then
-				PageText = PageText..text.text6;
-			end
-			if text.text7 then
-				PageText = PageText..text.text7;
-			end
-			if text.text8 then
-				PageText = PageText..text.text8;
-			end
-			if text.text9 then
-				PageText = PageText..text.text9;
-			end
-			if text.text10 then
-				PageText = PageText..text.text10;
+			local textType = type(text);
+			if textType == "string" then
+				PageText = text;
+			elseif textType == "table" then
+				if text.text1 then
+					PageText = PageText..text.text1;
+				end
+				if text.text2 then
+					PageText = PageText..text.text2;
+				end
+				if text.text3 then
+					PageText = PageText..text.text3;
+				end
+				if text.text4 then
+					PageText = PageText..text.text4;
+				end
+				if text.text5 then
+					PageText = PageText..text.text5;
+				end
+				if text.text6 then
+					PageText = PageText..text.text6;
+				end
+				if text.text7 then
+					PageText = PageText..text.text7;
+				end
+				if text.text8 then
+					PageText = PageText..text.text8;
+				end
+				if text.text9 then
+					PageText = PageText..text.text9;
+				end
+				if text.text10 then
+					PageText = PageText..text.text10;
+				end
 			end
 			local t = PageText;
 			local a = 0;
@@ -1309,18 +1320,22 @@ function GHI_UpdateBookLinks(page,deleted)
 				end
 			end
 			if changed == true then
-				text = {};
-				text.text1 = string.sub(t,0,127) 
-				text.text2 = string.sub(t,128,255) 
-				text.text3 = string.sub(t,256,383) 
-				text.text4 = string.sub(t,384,511) 
-				text.text5 = string.sub(t,512,639) 
-				text.text6 = string.sub(t,640,767) 
-				text.text7 = string.sub(t,768,895) 
-				text.text8 = string.sub(t,896,1023) 
-				text.text9 = string.sub(t,1024,1151) 
-				text.text10 = string.sub(t,1152,1279)
-				GHI_CurrentBook[i] = text;
+				if textType == "string" then
+					GHI_CurrentBook[i] = t;
+				elseif textType == "table" then
+					text = {};
+					text.text1 = string.sub(t,0,127) 
+					text.text2 = string.sub(t,128,255) 
+					text.text3 = string.sub(t,256,383) 
+					text.text4 = string.sub(t,384,511) 
+					text.text5 = string.sub(t,512,639) 
+					text.text6 = string.sub(t,640,767) 
+					text.text7 = string.sub(t,768,895) 
+					text.text8 = string.sub(t,896,1023) 
+					text.text9 = string.sub(t,1024,1151) 
+					text.text10 = string.sub(t,1152,1279)
+					GHI_CurrentBook[i] = text;
+				end
 			end			
 		end
 	end
