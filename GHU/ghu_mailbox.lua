@@ -3,6 +3,7 @@ GHU_Mail.__index = GHU_Mail;
 GHU_Mail.hooked = {};
 GHU_Mail.cache = {};
 GHU_Mail.pendingAttachment = nil;
+GHU_Mail.pendingReceives = {};
 GHU_Mail.sending = nil;
 
 local GHU_MAIL_SUBJECT_PREFIX = "GHI#";
@@ -259,16 +260,6 @@ function GHU_Mail:InitHooks(varName)
 	self:RegisterExternalDropHandler();
 end
 
--- The original GHU prototype hard-coded its synthetic example mail to inbox
--- index 2. Append it after the real inbox instead so it is visible regardless
--- of how many normal mails the character has.
-function GHU_Mail:GetVirtualInboxIndex()
-	if self.orig and type(self.orig.GetInboxNumItems)=="function" then
-		return (self.orig.GetInboxNumItems() or 0) + 1;
-	end
-	return 1;
-end
-
 function GHU_Mail:GetRealHeader(index)
 	if not self.orig or type(self.orig.GetInboxHeaderInfo) ~= "function" then return nil; end
 	return self.orig.GetInboxHeaderInfo(index);
@@ -314,15 +305,8 @@ function GHU_Mail:AssembleTransfer(index)
 	local chunks = {};
 	for i=1,meta.total do
 		local realIndex = indices[i];
-		if not realIndex then return nil,"Missing GHI mail part "..i.." of "..meta.total.."."; end
 		local body = self.orig.GetInboxText(realIndex);
-		if type(body) ~= "string" or body == "" then
-			return nil,"Loading GHI mail data...";
-		end
 		local bodyPrefix = GHU_MAIL_BODY_PREFIX..meta.id.."#"..i.."#"..meta.total.."#";
-		if string.sub(body,1,string.len(bodyPrefix)) ~= bodyPrefix then
-			return nil,"GHI mail part "..i.." is corrupt.";
-		end
 		chunks[i] = string.sub(body,string.len(bodyPrefix)+1);
 	end
 
@@ -347,6 +331,21 @@ function GHU_Mail:AssembleTransfer(index)
 	return data;
 end
 
+function GHU_Mail:RetryPendingReceives()
+	if not self.pendingReceives then return; end
+	local key,entry;
+	for key,entry in pairs(self.pendingReceives) do
+		if entry and entry.index then
+			local data,err = self:AssembleTransfer(entry.index);
+			if data then
+				self.pendingReceives[key] = nil;
+			elseif err and string.find(err,"Loading GHI mail data",1,true) then
+				-- Still waiting for the server to populate one or more bodies.
+			end
+		end
+	end
+end
+
 -- Inbox hooks ----------------------------------------------------------------
 function GHU_Mail:GetInboxItem(index,itemIndex)
 	self = gself or self;
@@ -355,9 +354,6 @@ function GHU_Mail:GetInboxItem(index,itemIndex)
 	-- Treat an omitted index as attachment slot 1 for our virtual GHI package.
 	local requestedItemIndex = itemIndex;
 	if requestedItemIndex == nil then requestedItemIndex = 1; end
-	if index == self:GetVirtualInboxIndex() and requestedItemIndex == 1 then
-		return "Document","Interface\\Icons\\INV_Letter_05",0,3,1;
-	end
 	local meta = self:GetTransferMeta(index);
 	if meta and meta.part == 1 and requestedItemIndex == 1 and not self:IsClaimed(meta.sender,meta.id) then
 		local data = self:AssembleTransfer(index);
@@ -383,17 +379,17 @@ end
 
 function GHU_Mail:GetInboxHeaderInfo(index)
 	self = gself or self;
-	if index == self:GetVirtualInboxIndex() then
-		local packageIcon = nil;
-		local stationeryIcon = "Interface\\Icons\\INV_Letter_05";
-		local sender = "Stormwind Council";
-		local subject = "The Gryphonheart Project";
-		return packageIcon,stationeryIcon,sender,subject,0,0,10,nil,true,nil,nil,nil,true;
-	end
 
 	local packageIcon,stationeryIcon,sender,subject,money,CODAmount,daysLeft,hasItem,wasRead,wasReturned,textCreated,canReply,isGM = self.orig.GetInboxHeaderInfo(index);
 	local meta = GHU_ParseMailSubject(subject);
 	if meta then
+		-- TurtleMail's automatic "Open All" routine skips GM mail. GHI multipart
+		-- mail must be protected from that routine because TurtleMail otherwise
+		-- calls TakeInboxItem() and DeleteInboxItem() before GetInboxText() has
+		-- necessarily populated the server-side body. GHI needs all parts to
+		-- remain in the inbox until the complete transfer can be assembled.
+		isGM = true;
+
 		if meta.part == 1 then
 			subject = meta.subject ~= "" and meta.subject or "GHI Item";
 			if not self:IsClaimed(sender,meta.id) then
@@ -404,7 +400,7 @@ function GHU_Mail:GetInboxHeaderInfo(index)
 				hasItem = nil;
 			end
 		else
-			subject = "GHI item data ("..meta.part.."/"..meta.total..")";
+			subject = "GHI item data ("..meta.part.."\/"..meta.total..")";
 			hasItem = nil;
 			packageIcon = nil;
 		end
@@ -414,14 +410,11 @@ end
 
 function GHU_Mail:GetInboxNumItems()
 	self = gself or self;
-	return (self.orig.GetInboxNumItems() or 0) + 1;
+	return self.orig.GetInboxNumItems();
 end
 
 function GHU_Mail:GetInboxText(index)
 	self = gself or self;
-	if index == self:GetVirtualInboxIndex() then
-		return "Greetings Pioneer "..UnitName("player").."\n\nTo improve the trade situation the Stormwind Council have issued some new initiatives. The initiatives involves more organised professions and is know as Gryphonheart Project.\n\nRegards\nThe Councilor of Trade and Resources.","STATIONERYTEST";
-	end
 	local meta = self:GetTransferMeta(index);
 	if meta then
 		local _,stationery = self.orig.GetInboxText(index);
@@ -455,7 +448,16 @@ function GHU_Mail:TakeInboxItem(index)
 		end
 		local data,err = self:AssembleTransfer(index);
 		if not data then
-			GHU_MailMessage(err or "GHI mail data is still loading. Open the letter again in a moment.");
+			if err and string.find(err,"Loading GHI mail data",1,true) then
+				self.pendingReceives = self.pendingReceives or {};
+				local receiveKey = GHU_MailKey(meta.sender,meta.id);
+				self.pendingReceives[receiveKey] = {
+					index=index, id=meta.id, sender=meta.sender, total=meta.total
+				};
+				GHU_MailMessage("GHI mail is still downloading. Waiting for the inbox to update...");
+			else
+				GHU_MailMessage(err or "GHI mail data is still loading. Open the letter again in a moment.");
+			end
 			if type(CheckInbox)=="function" then CheckInbox(); end
 			return;
 		end
@@ -606,7 +608,10 @@ function GHU_Mail:SendNextPart()
 	local part = s.part;
 	local subject = self:MakeTransportSubject(s.mailID,part,s.total,s.subject);
 	local bodyPrefix = GHU_MAIL_BODY_PREFIX..s.mailID.."#"..part.."#"..s.total.."#";
-	SendMail(s.to,subject,bodyPrefix..s.parts[part]);
+	local body = bodyPrefix..s.parts[part];
+
+
+	SendMail(s.to,subject,body);
 end
 
 function GHU_Mail:BeginGHIItemSend()
@@ -662,6 +667,7 @@ function GHU_Mail:BeginGHIItemSend()
 	end
 	self.sending = {
 		to=to, subject=subject, mailID=mailID, parts=parts, total=total, part=1,
+		codeLength=string.len(code), payloadLength=string.len(payload),
 		bag=p.bag, slot=p.slot, frame=p.frame, amount=p.amount, ID=p.ID, name=p.name,
 	};
 	GHU_MailMessage("Sending "..p.name.." by GHI mail ("..total.." part"..((total==1) and "" or "s")..").");
@@ -683,7 +689,25 @@ function GHU_Mail:MailSendSucceeded()
 	if not s then return; end
 	if s.part < s.total then
 		s.part = s.part + 1;
-		self:SendNextPart();
+
+		if self.multipartSendFrame then
+			self.multipartSendFrame:SetScript("OnUpdate",nil);
+		end
+
+		local obj = self;
+		local expectedSending = s;
+		local elapsed = 0;
+		self.multipartSendFrame = CreateFrame("Frame");
+		self.multipartSendFrame:SetScript("OnUpdate",function()
+			elapsed = elapsed + (arg1 or 0);
+			if elapsed >= 2 then
+				self.multipartSendFrame:SetScript("OnUpdate",nil);
+				self.multipartSendFrame = nil;
+				if obj.sending == expectedSending then
+					obj:SendNextPart();
+				end
+			end
+		end);
 		return;
 	end
 	-- All server-mail chunks are safely accepted. Consume the sender's virtual
@@ -701,7 +725,42 @@ function GHU_Mail:MailSendSucceeded()
 end
 
 function GHU_Mail:MailSendFailed()
-	if not self.sending then return; end
+	local s = self.sending;
+	if not s then return; end
+	-- Retry multipart parts once if the mail subsystem rejects a send.
+	-- Keep the retry timer separate from the normal success-to-next-part timer.
+	if s.total and s.total > 1 then
+		s.retry = (s.retry or 0) + 1;
+
+		if s.retry <= 1 then
+			local obj = self;
+			local expectedSending = s;
+
+			if obj.multipartRetryFrame then
+				obj.multipartRetryFrame:SetScript("OnUpdate",nil);
+				obj.multipartRetryFrame = nil;
+			end
+
+			obj.multipartRetryFrame = CreateFrame("Frame");
+			local elapsed = 0;
+
+			obj.multipartRetryFrame:SetScript("OnUpdate",function()
+				elapsed = elapsed + (arg1 or 0);
+
+				if elapsed >= 2 then
+					obj.multipartRetryFrame:SetScript("OnUpdate",nil);
+					obj.multipartRetryFrame = nil;
+
+					if obj.sending == expectedSending then
+						obj:SendNextPart();
+					end
+				end
+			end);
+
+			return;
+		end
+	end
+
 	self.sending = nil;
 	GHU_MailMessage("GHI mail failed. The item was not removed from your bag.");
 	self:ApplyAttachmentVisual();
@@ -721,7 +780,6 @@ end
 -- Event handling for inbox refresh and multipart GHI mail delivery.
 if not GHU_Mail.mailEventFrame then
 	local f = CreateFrame("Frame","GHU_MailEventFrame");
-	f:RegisterEvent("ADDON_LOADED");
 	f:RegisterEvent("MAIL_SHOW");
 	f:RegisterEvent("MAIL_INBOX_UPDATE");
 	f:RegisterEvent("MAIL_SEND_SUCCESS");
@@ -735,29 +793,15 @@ if not GHU_Mail.mailEventFrame then
 			if obj then obj:MailSendFailed(); end
 		elseif event == "MAIL_CLOSED" then
 			if obj and not obj.sending and obj.pendingAttachment then obj:ClearPendingAttachment(true); end
-		elseif event == "ADDON_LOADED" then
-			if obj then obj:InstallSendHooks(); end
 		elseif event == "MAIL_SHOW" or event == "MAIL_INBOX_UPDATE" then
 			if obj then obj:InstallSendHooks(); end
 			if type(InboxFrame_Update)=="function" then InboxFrame_Update(); end
 			if OpenMailFrame and OpenMailFrame:IsVisible() and type(OpenMail_Update)=="function" then OpenMail_Update(); end
+			if obj then obj:RetryPendingReceives(); end
 		end
 	end);
-	f:SetScript("OnUpdate",function()
-		local obj = GHU_Mail.activeObject;
-		if obj then
-			-- Blizzard/Turtle mail UI and GHI can load in either order. The visible
-			-- TurtleMail disables the old single package button and uses
-			-- MailAttachment1..N. Stock/multi-attachment clients may instead expose
-			-- SendMailAttachment1..N; GetSendAttachmentButton handles both.
-			obj:InstallAttachmentButtonHooks();
-			obj:InstallMailButtonHook();
-			if not obj.externalDropRegistered then obj:RegisterExternalDropHandler(); end
-			if obj.pendingAttachment then obj:ApplyAttachmentVisual(); end
-
-			-- Do not auto-attach merely by hovering a virtual GHI item over a slot.
-			-- InstallAttachmentButtonHooks handles the deliberate mouse-down drop.
-		end
-	end);
+	-- v44: no continuous mail polling during login or normal gameplay.
+	-- TurtleMail/Blizzard mail hooks are installed only from MAIL_SHOW and
+	-- MAIL_INBOX_UPDATE after the mail UI exists.
 	GHU_Mail.mailEventFrame = f;
 end
