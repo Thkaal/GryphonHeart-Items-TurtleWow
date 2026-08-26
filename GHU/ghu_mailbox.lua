@@ -439,7 +439,6 @@ end
 
 function GHU_Mail:TakeInboxItem(index)
 	self = gself or self;
-	if index == self:GetVirtualInboxIndex() then return; end
 	local meta = self:GetTransferMeta(index);
 	if meta and meta.part == 1 then
 		if self:IsClaimed(meta.sender,meta.id) then
