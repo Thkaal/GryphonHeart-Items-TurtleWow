@@ -1800,6 +1800,10 @@ end
 
 function EquipItem(name)
 	local b,s = FindItem(name);
+	if b == nil or s == nil then
+		GHI_Message("You do not currently own that item.");
+		return;
+	end
 	PickupContainerItem(b,s);
 	AutoEquipCursorItem();
 end

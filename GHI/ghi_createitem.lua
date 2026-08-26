@@ -1943,6 +1943,8 @@ end
 -- TurtleWoW mail transfer helper.  This is intentionally separate from the
 -- user-facing Export Item feature: mailing is a transfer, so an item that is
 -- not copyable may still be mailed away just as it may be traded away.
+-- GHI Mail Export Debug v44
+-- Logs export size and right click type to isolate buff-item failures.
 function GHI_TransferExportItem(ID,amount)
 	amount = tonumber(amount) or 1;
 	local item = GHI_GetItemInfo(ID,true);
@@ -1982,11 +1984,11 @@ function GHI_ImportItem(code)
 	local t = StringToTable(s);
 	if not(type(t)=="table") then
 		GHI_Message(GHI_CAN_NOT_IMPORT);
-		return;
+		return false;
 	elseif (table.getn(t) == 1) then
 		GHI_Message(GHI_CAN_NOT_IMPORT);
 		GHI_Message(t[1]);
-		return;
+		return false;
 	end
 	
 	IMPORT_REQ = false;
@@ -2002,7 +2004,7 @@ function GHI_ImportItem(code)
 		
 	else
 		GHI_Message(GHI_CAN_NOT_IMPORT);
-		return;
+		return false;
 	end
 	
 	local item = t["item"];
@@ -2032,6 +2034,7 @@ function GHI_ImportItem(code)
 	-- insert item
 	GHI_InsertItem(ID,amount,false);
 	GHI_Message(format(GHI_IMPORT_REPORT,amount,GHI_GenerateLink(ID)));
+	return true;
 end
 
 
