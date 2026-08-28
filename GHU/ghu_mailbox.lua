@@ -305,8 +305,24 @@ function GHU_Mail:AssembleTransfer(index)
 	local chunks = {};
 	for i=1,meta.total do
 		local realIndex = indices[i];
+
+		-- A multipart GHI message can appear in the inbox before every
+		-- part has been populated. Never call GetInboxText() with a
+		-- missing inbox index.
+		if not realIndex then
+			return nil,"Loading GHI mail data...";
+		end
+
 		local body = self.orig.GetInboxText(realIndex);
+		if type(body) ~= "string" or body == "" then
+			return nil,"Loading GHI mail data...";
+		end
+
 		local bodyPrefix = GHU_MAIL_BODY_PREFIX..meta.id.."#"..i.."#"..meta.total.."#";
+		if string.sub(body,1,string.len(bodyPrefix)) ~= bodyPrefix then
+			return nil,"Loading GHI mail data...";
+		end
+
 		chunks[i] = string.sub(body,string.len(bodyPrefix)+1);
 	end
 
@@ -433,8 +449,7 @@ end
 
 function GHU_Mail:GetLatestThreeSenders()
 	self = gself or self;
-	-- Preserve the original GHU demonstration behavior.
-	return "Ian Drake","Stormwind Council";
+	return self.orig.GetLatestThreeSenders();
 end
 
 function GHU_Mail:TakeInboxItem(index)
@@ -799,8 +814,6 @@ if not GHU_Mail.mailEventFrame then
 			if obj then obj:RetryPendingReceives(); end
 		end
 	end);
-	-- v44: no continuous mail polling during login or normal gameplay.
-	-- TurtleMail/Blizzard mail hooks are installed only from MAIL_SHOW and
-	-- MAIL_INBOX_UPDATE after the mail UI exists.
+	-- Install/reinstall mail hooks only when the mailbox UI exists.
 	GHU_Mail.mailEventFrame = f;
 end
