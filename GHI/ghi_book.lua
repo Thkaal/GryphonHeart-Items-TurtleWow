@@ -666,7 +666,14 @@ function GHI_Book_H1OnClick()
 		t3 = string.sub(orig_text,ht2+1);
 		text = t1.."<H1>"..t2.."</H1>\n"..t3;
 		GHI_ItemTextPageEdit:SetText(text);
-		GHI_ItemTextPageEdit:SetCursorPosition(ht2+9);
+		-- Vanilla/Turtle WoW EditBox does not provide SetCursorPosition.
+		-- Highlighting a zero-length range safely clears the selection and
+		-- leaves the edit box usable on both old and newer clients.
+		if GHI_ItemTextPageEdit.SetCursorPosition then
+			GHI_ItemTextPageEdit:SetCursorPosition(ht2+9);
+		else
+			GHI_ItemTextPageEdit:HighlightText(ht2+9,ht2+9);
+		end
 		this.H1 = 0;
 		getglobal(this:GetName().."Text"):SetText(GHI_HEADLINE_1);
 		
@@ -700,7 +707,14 @@ function GHI_Book_H2OnClick()
 		t3 = string.sub(orig_text,ht2+1);
 		text = t1.."<H2>"..t2.."</H2>\n"..t3;
 		GHI_ItemTextPageEdit:SetText(text);
-		GHI_ItemTextPageEdit:SetCursorPosition(ht2+9);
+		-- Vanilla/Turtle WoW EditBox does not provide SetCursorPosition.
+		-- Highlighting a zero-length range safely clears the selection and
+		-- leaves the edit box usable on both old and newer clients.
+		if GHI_ItemTextPageEdit.SetCursorPosition then
+			GHI_ItemTextPageEdit:SetCursorPosition(ht2+9);
+		else
+			GHI_ItemTextPageEdit:HighlightText(ht2+9,ht2+9);
+		end
 		this.H2 = 0;
 		getglobal(this:GetName().."Text"):SetText(GHI_HEADLINE_2);
 		
