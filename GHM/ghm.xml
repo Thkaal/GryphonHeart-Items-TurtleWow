@@ -1932,37 +1932,72 @@
 	<Frame name="GHM_CustomDD_Template" inherits="UIDropDownMenuTemplate" enableMouse="true" virtual="true">		
 		<Scripts>
 		    <OnLoad>
-				
-				UIDropDownMenu_Initialize(this, function()
-					local t = nil;
-					if this:GetObjectType() == "Frame" then 
-						t = this:GetParent().tempdata;
-						this.dataTable = t;
-					else
-						t = this:GetParent().dataTable;
-					end
+				-- Turtle/Vanilla UIDropDownMenu has a small fixed button pool.
+				-- Keep CustomDD menus at eight entries per level and split larger
+				-- lists into range submenus. Capture the dropdown frame so submenu
+				-- callbacks do not depend on the global `this` value.
+				local f = this;
+				f.dataTable = f:GetParent().tempdata;
+				UIDropDownMenu_Initialize(f, function(level)
+					local t = f.dataTable;
 					if type(t) == "table" then
-						for i = 1,table.getn(t) do	
-							info            = {};
-							info.text       = t[i];
-							info.value      = i;
-							info.owner		= this:GetParent();
-							info.func       = function()
-												local text = this.owner.dataTable[this.value];
-												getglobal( (this.owner):GetName().."TextLabel"):SetText(text); 
-												if this.owner.returnIndex == true then
-													this.owner.main.SetLabel(this.owner.label,this.value);	
-												else
-													this.owner.main.SetLabel(this.owner.label,text);
-												end
-											end;
-							UIDropDownMenu_AddButton(info);
-						end	
-						
+						local pageSize = 8;
+						if type(UIDROPDOWNMENU_MAXBUTTONS) == "number" and pageSize > UIDROPDOWNMENU_MAXBUTTONS then
+							pageSize = UIDROPDOWNMENU_MAXBUTTONS;
+						end
+						if not(level) then
+							level = 1;
+						end
+
+						local function AddChoice(i,menuLevel)
+							local info = {};
+							info.text = t[i];
+							info.value = i;
+							info.owner = f;
+							info.func = function()
+								local text = this.owner.dataTable[this.value];
+								getglobal((this.owner):GetName().."TextLabel"):SetText(text);
+								if this.owner.returnIndex == true then
+									this.owner.main.SetLabel(this.owner.label,this.value);
+								else
+									this.owner.main.SetLabel(this.owner.label,text);
+								end
+							end;
+							UIDropDownMenu_AddButton(info,menuLevel);
+						end
+
+						local count = table.getn(t);
+						if count > pageSize then
+							if level == 1 then
+								local startIndex = 1;
+								while count >= startIndex do
+									local endIndex = startIndex + pageSize - 1;
+									if endIndex > count then
+										endIndex = count;
+									end
+									local info = {};
+									info.text = t[startIndex].." - "..t[endIndex];
+									info.value = { ghmStart = startIndex, ghmEnd = endIndex };
+									info.hasArrow = true;
+									info.notCheckable = true;
+									UIDropDownMenu_AddButton(info,1);
+									startIndex = endIndex + 1;
+								end
+							elseif level == 2 then
+								local range = UIDROPDOWNMENU_MENU_VALUE;
+								if type(range) == "table" and type(range.ghmStart) == "number" and type(range.ghmEnd) == "number" then
+									for i = range.ghmStart,range.ghmEnd do
+										AddChoice(i,2);
+									end
+								end
+							end
+						else
+							for i = 1,count do
+								AddChoice(i,level);
+							end
+						end
 					end
 				end);
-								
-				local f = this;
 				f.Force = function(data)
 					local label = getglobal(f:GetName().."TextLabel");
 					if type(data) == "number" then
