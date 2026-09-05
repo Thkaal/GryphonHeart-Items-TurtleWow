@@ -191,7 +191,37 @@ function GHI_SendBuffInfo(players)
 end
 
 function GHI_BuffRecieveInfo(sender,guid,buffData,debuffData,...)
-	Buff:Deserialize(guid,buffData,debuffData);
+
+	-- Turtle/Vanilla target identity is name-based in this port.
+	-- Store remote buffs by sender name so the key agrees with
+	-- UnitGUID("target") / the target buff display.
+	local key = sender or guid;
+
+	Buff:Deserialize(
+		key,
+		buffData,
+		debuffData
+	);
+
+	-- If the client ever provides a different target identifier,
+	-- also populate that key while this sender is our current target.
+	local targetName = UnitName("target");
+
+	if sender and targetName
+		and string.lower(sender) == string.lower(targetName) then
+
+		local targetKey = UnitGUID("target");
+
+		if targetKey
+			and targetKey ~= key then
+
+			Buff:Deserialize(
+				targetKey,
+				buffData,
+				debuffData
+			);
+		end
+	end
 end
 GHI:RegisterRecieve("BuffInfo",GHI_BuffRecieveInfo)
 
@@ -1366,5 +1396,4 @@ function GetGHITargetBuff(index,filter)
 		end
 	end
 end
-
 
