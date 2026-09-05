@@ -109,14 +109,29 @@ GHI_OldBuffPlayers = {};
 GHI_OldBuffReqs = {};
 
 function GHI_CheckTarget()
-	local name, realm = UnitName("target")
-	if UnitIsPlayer("target") and UnitFactionGroup("target") == UnitFactionGroup("player") and not(UnitName("player")==name) and realm == nil then
-		if type(subscriptionsSend[name])=="number" and (GetTime() - subscriptionsSend[name]) < 60*3 then
+	local name, realm = UnitName("target");
+
+	if UnitIsPlayer("target")
+		and UnitFactionGroup("target") == UnitFactionGroup("player")
+		and not(UnitName("player") == name)
+		and realm == nil then
+
+		if type(subscriptionsSend[name])=="number"
+			and (GetTime() - subscriptionsSend[name]) < 60*3 then
+
 			return;
 		end
-		GHI:SendPrioritizedMessage("NORMAL","WHISPER",name,false,"BuffSubscribe",60*5)
+
+		GHI:SendPrioritizedMessage(
+			"NORMAL",
+			"WHISPER",
+			name,
+			false,
+			"BuffSubscribe",
+			60*5
+		);
+
 		subscriptionsSend[name] = GetTime();
-		GHI_SendData("RequestBuffs",GHI_OldBuffReqs[name],name);
 	end
 end
 

@@ -1743,11 +1743,11 @@ local Decrypt = function(msg,nonChar)
 end
 
 local function CheckSum(s)
-	local c = 0;
-	for i = 0,string.len(s) do
-		c = bit.bxor(c,string.byte(s,i));
-	end
-	return c;
+    local c = 0;
+    for i = 1,string.len(s) do
+        c = bit.bxor(c,string.byte(s,i));
+    end
+    return c;
 end
 
 local escC = "|"
@@ -1796,7 +1796,11 @@ local function TableToString(t,addCheck)
 		elseif type(value)=="nil" then
 			s = format("%s[%s]=%s,",s,key,"nil");
 		elseif type(value)=="boolean" then
-			s = format("%s[%s]=%s,",s,key,btype(value));
+            if value then
+                s = format("%s[%s]=true,",s,key);
+            else
+                s = format("%s[%s]=false,",s,key);
+            end
 		elseif type(value)=="string" then
 			value = gsub(value,"\\","\\\\");
 			value = gsub(value,"\n","\\n");

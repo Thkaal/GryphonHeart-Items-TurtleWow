@@ -43,7 +43,7 @@ end
 -- whisper transport on Turtle/Vanilla and hides the transport text in the
 -- GHI chat handler.  The payload is hex encoded because SendChatMessage is
 -- not binary safe.
-local GHI5_WHISPER_MARK = "GHI5!";
+local GHI5_WHISPER_MARK = "GHI5:";
 
 local function ghi5_hex_encode(text)
     local out = {};
@@ -82,17 +82,26 @@ local function ghi5_receive_wire(text,distribution,sender)
 end
 
 local function ghi5_send_private_whisper(player,text,prio)
-    if not player or player=="" then return; end
-    local wire = GHI5_WHISPER_MARK..ghi5_hex_encode(text);
-    -- Reuse an already-loaded ChatThrottleLib only for ordinary chat whispers.
-    -- This does not alter TurtleRP and deliberately avoids its addon-message
-    -- path, which cannot whisper on the 1.12 API.
-    if ChatThrottleLib and type(ChatThrottleLib.SendChatMessage)=="function" then
-        ChatThrottleLib:SendChatMessage(prio or "BULK","GHI5",wire,"WHISPER",nil,player);
-    else
-        local send = GHI_origSendChatMessage or SendChatMessage;
-        send(wire,"WHISPER",nil,player);
-    end
+	if not player or player == "" then
+		return;
+	end
+
+	local wire =
+		GHI5_WHISPER_MARK..
+		ghi5_hex_encode(text);
+
+	local send =
+		GHI_origSendChatMessage or
+		SendChatMessage;
+
+	if type(send) == "function" then
+		send(
+			wire,
+			"WHISPER",
+			nil,
+			player
+		);
+	end
 end
 
 local function ghi5_send(channel,player,args,prio)
@@ -1331,3 +1340,4 @@ function GHI_MainMenuBarPerformanceBarFrame_OnEnter(f)
 end
 
 PERFORMANCEBAR_UPDATE_INTERVAL = 1;
+
