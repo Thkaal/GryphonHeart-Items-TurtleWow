@@ -79,6 +79,19 @@ local function ghi5_des(s,p)
     return nil,p;
 end
 
+function GHI:SerializeWireValue(value)
+	return ghi5_ser(value);
+end
+
+function GHI:DeserializeWireValue(text)
+	local value;
+	local position;
+
+	value, position = ghi5_des(text, 1);
+
+	return value;
+end
+
 -- The custom channel is ordinary chat transport, so the complete directed
 -- envelope is hex encoded.  This keeps GHI serialization bytes, WoW markup
 -- characters, delimiters and player names out of the visible wire format.
@@ -1606,3 +1619,4 @@ function GHI_MainMenuBarPerformanceBarFrame_OnEnter(f)
 end
 
 PERFORMANCEBAR_UPDATE_INTERVAL = 1;
+

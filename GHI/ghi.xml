@@ -19,9 +19,10 @@
 	
 	<script file="ghi_officialitems.lua"></script>
 	<script file="ghi_compatibility.lua"></script>
-	<script file="ghi_ghm_menu.lua"></script>
-	
-	
+    <script file="ghi_ghm_menu.lua"></script>
+    <script file="ghi_stash.lua"></script>
+	    
+	    
 	
 	
 	<Frame name="GHI_MF">

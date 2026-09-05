@@ -1397,3 +1397,4 @@ function GetGHITargetBuff(index,filter)
 	end
 end
 
+

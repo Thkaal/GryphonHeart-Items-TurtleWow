@@ -14,7 +14,6 @@ Localization\Localization.enUS.lua
 
 
 ghi.xml
-ghi_stash.lua
 ghi_book.xml
 ghi_display.xml
 Bindings.xml

@@ -1,4 +1,4 @@
-GHI_Stash = CreateFrame("frame");
+GHI_Stash = CreateFrame("Frame");
 GHI_Stash.__index = GHI_Stash;
 GHI_Stash.hooked = {};
 GHI_Stash.GHIContainerID = 100;
@@ -110,19 +110,12 @@ function GHI_Stash:InitCommunication()
 		return;
 	end
 
-	if not LibStub then
-		self:AddMessage(
-			"GHU stash communication is not available."
-		);
-		return;
-	end
+	if not GHI
+		or type(GHI.SerializeWireValue) ~= "function"
+		or type(GHI.DeserializeWireValue) ~= "function" then
 
-	self.serializer =
-		LibStub("AceSerializer-3.0", true);
-
-	if not self.serializer then
 		self:AddMessage(
-			"GHU stash serializer is not available."
+			"GHI stash communication is not available."
 		);
 		return;
 	end
@@ -351,8 +344,8 @@ function GHI_Stash:SendTransport(
 		payload = payload,
 	};
 
-	local serialized =
-		self.serializer:Serialize(packet);
+    local serialized =
+	    GHI:SerializeWireValue(packet);
 
 	if not serialized then
 		return false;
@@ -1047,25 +1040,20 @@ function GHI_Stash:ReceiveChannelChat(
 		return;
 	end
 
-	local success;
-	local packet;
+    local packet =
+	    GHI:DeserializeWireValue(
+		    serialized
+	    );
 
-	success, packet =
-		self.serializer:Deserialize(
-			serialized
-		);
+    if type(packet) ~= "table" then
+	    return;
+    end
 
-	if not success
-		or type(packet) ~= "table" then
-
-		return;
-	end
-
-	self:HandleTransportMessage(
-		sender,
-		packet
-	);
-end
+	    self:HandleTransportMessage(
+		    sender,
+		    packet
+	    );
+    end
 
 function GHI_Stash:CleanupTransportIncoming()
 	local now = GetTime();
