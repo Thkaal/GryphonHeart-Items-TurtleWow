@@ -10,7 +10,54 @@ function GHI_TradeHookings()
 	if eventFrame then
 		eventFrame:RegisterEvent("TRADE_CLOSED");
 		eventFrame:RegisterEvent("TRADE_ACCEPT_UPDATE");
+
+        if not GHI_TradeEventDebugHooked then
+            local oldOnEvent = eventFrame:GetScript("OnEvent");
+
+            eventFrame:SetScript("OnEvent", function()
+                if event == "TRADE_ACCEPT_UPDATE" then
+                    GHI_Message(
+                        "DEBUG TRADE_ACCEPT_UPDATE: "
+                        .. tostring(arg1)
+                        .. ", "
+                        .. tostring(arg2)
+                    );
+                elseif event == "TRADE_CLOSED" then
+                    GHI_Message("DEBUG TRADE_CLOSED");
+                end
+
+                if oldOnEvent then
+                    oldOnEvent();
+                end
+            end);
+
+            GHI_TradeEventDebugHooked = true;
+        end
+
 	end
+
+if not GHI_TradeEventDebugHooked then
+    local oldOnEvent = eventFrame:GetScript("OnEvent");
+
+    eventFrame:SetScript("OnEvent", function()
+        if event == "TRADE_ACCEPT_UPDATE" then
+            GHI_Message(
+                "DEBUG TRADE_ACCEPT_UPDATE: "
+                .. tostring(arg1)
+                .. ", "
+                .. tostring(arg2)
+            );
+        elseif event == "TRADE_CLOSED" then
+            GHI_Message("DEBUG TRADE_CLOSED");
+        end
+
+        if oldOnEvent then
+            oldOnEvent();
+        end
+    end);
+
+    GHI_TradeEventDebugHooked = true;
+end
 
 	-- Avoid double-hooking if this routine is reached more than once.
 	if ClickTradeButton ~= GHI_ClickTradeButton then
