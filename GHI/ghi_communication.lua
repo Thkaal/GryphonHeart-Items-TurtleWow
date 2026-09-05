@@ -17,6 +17,24 @@ local GHI5_CHANNEL_MARK = "GHI5:";
 local GHI5_CHANNEL_ID = 0;
 local GHI5_CHANNEL_RETRY = 2;
 
+-- Temporary buff-transport diagnostics.  Set this to false after testing.
+GHI5_BUFF_DEBUG = true;
+
+local function ghi5_buff_debug(text)
+    if not GHI5_BUFF_DEBUG then return; end
+    local msg = "GHI5 BUFF DEBUG: "..tostring(text or "");
+    if type(GHI_Message) == "function" then
+        GHI_Message(msg);
+    elseif DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
+        DEFAULT_CHAT_FRAME:AddMessage(msg);
+    end
+end
+
+local function ghi5_table_len(t)
+    if type(t) ~= "table" then return -1; end
+    return table.getn(t);
+end
+
 local GHI5_recv = {};
 local GHI5_seq = 0;
 local GHI5_eventFrame = nil;
@@ -212,6 +230,26 @@ local function ghi5_receive_wire(text,distribution,sender)
 
     local args=ghi5_des(all,1);
     if type(args)=="table" and GHI.ReceiveMessage then
+        local meta = args[2];
+        if meta == "BuffSubscribe" then
+            ghi5_buff_debug(
+                "RX BuffSubscribe <- "..tostring(sender)..
+                " subscription="..tostring(args[3])
+            );
+        elseif meta == "BuffInfo" then
+            local targetGuid = nil;
+            if type(UnitGUID) == "function" then
+                targetGuid = UnitGUID("target");
+            end
+            ghi5_buff_debug(
+                "RX BuffInfo <- "..tostring(sender)..
+                " guid="..tostring(args[3])..
+                " targetGuid="..tostring(targetGuid)..
+                " match="..tostring(targetGuid == args[3])..
+                " buffs="..tostring(ghi5_table_len(args[4]))..
+                " debuffs="..tostring(ghi5_table_len(args[5]))
+            );
+        end
         GHI:ReceiveMessage("GHI",sender,distribution,unpack(args));
     end
 end
@@ -233,6 +271,20 @@ local function ghi5_send_directed_channel(player,text,prio)
 end
 
 local function ghi5_send(channel,player,args,prio)
+    if type(args) == "table" then
+        local meta = args[2];
+        if meta == "BuffSubscribe" then
+            ghi5_buff_debug("TX BuffSubscribe -> "..tostring(player).." subscription="..tostring(args[3]));
+        elseif meta == "BuffInfo" then
+            ghi5_buff_debug(
+                "TX BuffInfo -> "..tostring(player)..
+                " guid="..tostring(args[3])..
+                " buffs="..tostring(ghi5_table_len(args[4]))..
+                " debuffs="..tostring(ghi5_table_len(args[5]))
+            );
+        end
+    end
+
     local payload=ghi5_ser(args);
     GHI5_seq=GHI5_seq+1;
 
@@ -436,7 +488,15 @@ function GHI:ReceiveMessage(prefix, sender, distribution, oldRecieve, meta, arg1
 	end
 	
 	if string.len(meta or "") > 0 and type(recieveFunctions[meta]) == "function" then
+		if meta == "BuffSubscribe" or meta == "BuffInfo" then
+			ghi5_buff_debug("DISPATCH "..tostring(meta).." callback=function sender="..tostring(sender));
+		end
 		recieveFunctions[meta](sender,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9);
+		if meta == "BuffSubscribe" or meta == "BuffInfo" then
+			ghi5_buff_debug("DONE "..tostring(meta));
+		end
+	elseif meta == "BuffSubscribe" or meta == "BuffInfo" then
+		ghi5_buff_debug("NO CALLBACK REGISTERED for "..tostring(meta));
 	end
 end
 
