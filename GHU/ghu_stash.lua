@@ -1,6 +1,11 @@
 GHU_Stash = CreateFrame("frame");
 GHU_Stash.__index = GHU_Stash;
 GHU_Stash.hooked = {};
+GHU_Stash.GHIContainerID = 100;
+
+GHU_Stash.zoneSyncPending = false;
+GHU_Stash.zoneSyncElapsed = 0;
+GHU_Stash.zoneSyncDelay = 2;
 
 GHU_Stash.currentStash = nil;
 
@@ -27,13 +32,241 @@ function GHU_Stash:Init()
 		GHU_StashData.stashes = {};
 	end
 
-	if not GHU_StashData.nextStashID then
-		GHU_StashData.nextStashID = 1;
+	if not GHU_StashData.replicaStashes then
+		GHU_StashData.replicaStashes = {};
 	end
 
 	self.stashes = GHU_StashData.stashes;
+	self.replicaStashes = GHU_StashData.replicaStashes;
+
+	-- Container 100 is only the temporary bridge to
+	-- whichever stash is currently open.
+	if type(GHI_ContainerData) == "table" then
+		GHI_ContainerData[self.GHIContainerID] = nil;
+	end
+
+	self:HookGHI();
+	self:InitCommunication();
 end
 
+function GHU_Stash:InitCommunication()
+	if self.hooked.communication then
+		return;
+	end
+
+	if not GHI
+		or type(GHI.RegisterRecieve) ~= "function"
+		or type(GHI.SendMessage) ~= "function" then
+
+		self:AddMessage("GHU stash communication is not available.");
+		return;
+	end
+
+    GHI:RegisterRecieve(
+	    "GHU_StashPublish",
+	    function(sender, stash)
+		    GHU_Stash:ReceivePublishedStash(
+			    sender,
+			    stash
+		    );
+	    end
+    );
+
+	self.hooked.communication = true;
+end
+
+function GHU_Stash:GetZoneStashes(continent, zone)
+	local result = {};
+
+	local sources = {
+		self.stashes,
+		self.replicaStashes,
+	};
+
+	local sourceIndex;
+	local source;
+	local stashID;
+	local stash;
+	local existing;
+
+	for sourceIndex = 1, table.getn(sources) do
+		source = sources[sourceIndex];
+
+		for stashID, stash in pairs(source or {}) do
+			if stash.location
+				and stash.location.continent == continent
+				and stash.location.zone == zone then
+
+				existing = result[stashID];
+
+				if not existing
+					or self:IsNewerStash(
+						stash,
+						existing
+					) then
+
+					result[stashID] = stash;
+				end
+			end
+		end
+	end
+
+	return result;
+end
+
+function GHU_Stash:IsNewerStash(incoming, existing)
+	if not incoming then
+		return false;
+	end
+
+	if not existing then
+		return true;
+	end
+
+	local incomingTime = tonumber(incoming.updated) or 0;
+	local existingTime = tonumber(existing.updated) or 0;
+
+	if incomingTime > existingTime then
+		return true;
+	elseif incomingTime < existingTime then
+		return false;
+	end
+
+	local incomingSerial = tonumber(incoming.updateSerial) or 0;
+	local existingSerial = tonumber(existing.updateSerial) or 0;
+
+	if incomingSerial > existingSerial then
+		return true;
+	elseif incomingSerial < existingSerial then
+		return false;
+	end
+
+	-- Final deterministic tie breaker.
+	local incomingEditor = string.lower(incoming.lastEditor or "");
+	local existingEditor = string.lower(existing.lastEditor or "");
+
+	return incomingEditor > existingEditor;
+end
+
+function GHU_Stash:ReceivePublishedStash(sender, stash)
+	if type(stash) ~= "table" then
+		return;
+	end
+
+	if not stash.id or stash.id == "" then
+		return;
+	end
+
+	-- Cursor locking is local state and must never become
+	-- part of the distributed stash.
+	if type(stash.items) == "table" then
+		local slot;
+		local item;
+
+		for slot, item in pairs(stash.items) do
+			if type(item) == "table" then
+				item.locked = nil;
+			end
+		end
+	end
+
+	--
+	-- If this is one of our originally-created stashes,
+	-- a newer remote copy may represent changes made while
+	-- we were offline.
+	--
+	if self.stashes[stash.id] then
+		if self:IsNewerStash(stash, self.stashes[stash.id]) then
+			self.stashes[stash.id] = stash;
+
+			if self.currentStash
+				and self.currentStash.id == stash.id then
+
+				self.currentStash = stash;
+
+				if self.bagFrame
+					and self.bagFrame:IsShown() then
+
+					self:BindGHIContainer(stash);
+					self:UpdateBag();
+				end
+			end
+		end
+
+		return;
+	end
+
+	local old = self.replicaStashes[stash.id];
+
+	if not old or self:IsNewerStash(stash, old) then
+		self.replicaStashes[stash.id] = stash;
+
+		if self.currentStash
+			and self.currentStash.id == stash.id then
+
+			self.currentStash = stash;
+
+			if self.bagFrame
+				and self.bagFrame:IsShown() then
+
+				self:BindGHIContainer(stash);
+				self:UpdateBag();
+			end
+		end
+	end
+end
+
+function GHU_Stash:ScheduleZoneSync()
+	self.zoneSyncPending = true;
+	self.zoneSyncElapsed = 0;
+end
+
+
+function GHU_Stash:Update(elapsed)
+	if self.zoneSyncPending then
+		self.zoneSyncElapsed =
+			self.zoneSyncElapsed + elapsed;
+
+		if self.zoneSyncElapsed >= self.zoneSyncDelay then
+			self.zoneSyncPending = false;
+			self.zoneSyncElapsed = 0;
+
+			self:SynchronizeCurrentZone();
+		end
+	end
+end
+
+function GHU_Stash:GenerateStashID(location)
+	if not location then
+		return nil;
+	end
+
+	local playerName = self:GetPlayerName();
+
+	if not playerName then
+		return nil;
+	end
+
+	local timestamp = time();
+	local checksum = self:GetNameChecksum(playerName);
+	local zone = tonumber(location.zone) or 0;
+
+	local stashID = tostring(timestamp)
+		.. "-"
+		.. tostring(checksum)
+		.. "-"
+		.. tostring(zone);
+
+	if self.stashes and self.stashes[stashID] then
+		return nil;
+	end
+
+	if self.replicaStashes and self.replicaStashes[stashID] then
+		return nil;
+	end
+
+	return stashID;
+end
 
 function GHU_Stash:OnLoad()
 	-- SavedVariables and communication hooks can be initialized here later.
@@ -42,6 +275,94 @@ end
 
 function GHU_Stash:GetPlayerName()
 	return UnitName("player");
+end
+
+function GHU_Stash:PublishStash(stash, target)
+	if not stash
+		or not stash.id
+		or not GHI
+		or type(GHI.SendMessage) ~= "function" then
+
+		return false;
+	end
+
+	-- If a specific player requested synchronization,
+	-- send the stash directly to that player.
+	if target then
+		GHI:SendMessage(
+			"WHISPER",
+			target,
+			false,
+			"GHU_StashPublish",
+			stash
+		);
+
+		return true;
+	end
+
+	local comzone;
+
+	if stash.location and stash.location.zoneName then
+		comzone = stash.location.zoneName;
+	else
+		comzone = GetZoneText();
+	end
+
+	if comzone == "City of Ironforge" then
+		comzone = "Ironforge";
+	end
+
+	local channelID;
+	local channelName;
+
+	channelID, channelName = GetChannelName(
+		"General - " .. comzone
+	);
+
+	if not channelID
+		or channelID <= 0
+		or not channelName then
+
+		return false;
+	end
+
+	-- Vanilla's group and raid entries occupy the first
+	-- two channel-roster indexes.
+	local rosterID = channelID + 2;
+
+	local memberCount = GetNumChannelMembers(rosterID);
+
+	-- GHI itself has historically needed this queried twice.
+	if not memberCount then
+		memberCount = GetNumChannelMembers(rosterID);
+	end
+
+	if not memberCount then
+		return false;
+	end
+
+	local myName = self:GetPlayerName();
+	local i;
+	local memberName;
+
+	for i = 1, tonumber(memberCount) do
+		memberName = GetChannelRosterInfo(rosterID, i);
+
+		if memberName
+			and memberName ~= ""
+			and memberName ~= myName then
+
+			GHI:SendMessage(
+				"WHISPER",
+				memberName,
+				false,
+				"GHU_StashPublish",
+				stash
+			);
+		end
+	end
+
+	return true;
 end
 
 function GHU_Stash:CreateBagFrame()
@@ -109,14 +430,18 @@ function GHU_Stash:CreateBagFrame()
 
 
 	-- Close button
-	local close = CreateFrame(
-		"Button",
-		"GHU_StashBagCloseButton",
-		frame,
-		"UIPanelCloseButton"
-	);
+    local close = CreateFrame(
+	    "Button",
+	    "GHU_StashBagCloseButton",
+	    frame,
+	    "UIPanelCloseButton"
+    );
 
-	close:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -4, -4);
+    close:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -4, -4);
+
+    close:SetScript("OnClick", function()
+	    GHU_Stash:CloseBag();
+    end);
 
 
 	-- Item slots
@@ -148,15 +473,110 @@ function GHU_Stash:CreateBagFrame()
 				-62 - ((row - 1) * 44)
 			);
 
-			slot.slotNumber = slotNumber;
+            slot.slotNumber = slotNumber;
+            slot.number = slotNumber;
+            slot:SetID(slotNumber);
 
-			frame.slots[slotNumber] = slot;
+            slot:RegisterForDrag("LeftButton");
+            slot:RegisterForClicks("AnyUp");
+
+
+            slot:SetScript("OnClick", function()
+	            -- Initially only use GHI's left-click inventory handling.
+	            -- Right-click item use can be added once stash storage is stable.
+	            if arg1 == "LeftButton" then
+		            GHI_ContainerFrameItemButton_OnClick(arg1);
+		            GHU_Stash:UpdateBag();
+	            end
+            end);
+
+
+            slot:SetScript("OnDragStart", function()
+	            if this.hasItem then
+		            GHI_PickupContainerItem(this, 0);
+		            GHU_Stash:UpdateBag();
+	            end
+            end);
+
+
+            slot:SetScript("OnReceiveDrag", function()
+	            local cursorType = GHI_GetCursor();
+
+	            if cursorType == "item" then
+		            GHI_PlaceContainerItem(this);
+		            GHU_Stash:UpdateBag();
+	            end
+            end);
+
+
+            slot:SetScript("OnEnter", function()
+	            if this.hasItem then
+		            GHI_ContainerFrameItemButton_OnEnter(this);
+	            end
+            end);
+
+
+            slot:SetScript("OnLeave", function()
+	            GameTooltip:Hide();
+            end);
+
+
+            frame.slots[slotNumber] = slot;
 
 			slotNumber = slotNumber + 1;
 		end
 	end
 
 	self.bagFrame = frame;
+end
+
+function GHU_Stash:TouchStash(stash)
+	if not stash then
+		return;
+	end
+
+	local timestamp = time();
+
+	if stash.updated == timestamp then
+		stash.updateSerial =
+			(tonumber(stash.updateSerial) or 0) + 1;
+	else
+		stash.updated = timestamp;
+		stash.updateSerial = 0;
+	end
+
+	stash.lastEditor = self:GetPlayerName();
+end
+
+function GHU_Stash:GetNameChecksum(name)
+	if not name then
+		return 0;
+	end
+
+	name = string.lower(name);
+
+	local checksum = 0;
+	local i;
+	local byte;
+
+	for i = 1, string.len(name) do
+		byte = string.byte(name, i);
+
+		checksum = math.mod(
+			checksum + (byte * i),
+			100000
+		);
+	end
+
+	return checksum;
+end
+
+function GHU_Stash:OpenGHIBackpack()
+	if GHIContainerFrame1
+		and not GHIContainerFrame1:IsShown() then
+
+		GHIContainerFrame1:Show();
+	end
 end
 
 function GHU_Stash:OpenBag(stash)
@@ -178,6 +598,8 @@ function GHU_Stash:OpenBag(stash)
 	end
 
 	self.currentStash = stash;
+
+    self:BindGHIContainer(stash);
 
 	self.bagFrame.title:SetText("Hidden Stash");
 
@@ -202,6 +624,96 @@ function GHU_Stash:OpenBag(stash)
 	self.bagFrame:Show();
 end
 
+function GHU_Stash:ReceiveZoneSyncRequest(
+	sender,
+	continent,
+	zone
+)
+	continent = tonumber(continent);
+	zone = tonumber(zone);
+
+	if not sender or not continent or not zone then
+		return;
+	end
+
+	local stashes = self:GetZoneStashes(
+		continent,
+		zone
+	);
+
+	local stashID;
+	local stash;
+
+	for stashID, stash in pairs(stashes) do
+		self:PublishStash(stash, sender);
+	end
+end
+
+function GHU_Stash:SendZoneSyncRequest(location)
+	if not location then
+		return false;
+	end
+
+	local comzone = location.zoneName or GetZoneText();
+
+	if comzone == "City of Ironforge" then
+		comzone = "Ironforge";
+	end
+
+	local channelID;
+	local channelName;
+
+	channelID, channelName = GetChannelName(
+		"General - " .. comzone
+	);
+
+	if not channelID
+		or channelID <= 0
+		or not channelName then
+
+		return false;
+	end
+
+	local rosterID = channelID + 2;
+
+	local memberCount =
+		GetNumChannelMembers(rosterID);
+
+	if not memberCount then
+		memberCount =
+			GetNumChannelMembers(rosterID);
+	end
+
+	if not memberCount then
+		return false;
+	end
+
+	local myName = self:GetPlayerName();
+	local memberName;
+	local i;
+
+	for i = 1, tonumber(memberCount) do
+		memberName =
+			GetChannelRosterInfo(rosterID, i);
+
+		if memberName
+			and memberName ~= ""
+			and memberName ~= myName then
+
+			GHI:SendMessage(
+				"WHISPER",
+				memberName,
+				false,
+				"GHU_StashSyncRequest",
+				location.continent,
+				location.zone
+			);
+		end
+	end
+
+	return true;
+end
+
 function GHU_Stash:UpdateBag()
 	if not self.bagFrame then
 		return;
@@ -209,14 +721,105 @@ function GHU_Stash:UpdateBag()
 
 	local i;
 	local slot;
+	local data;
+	local ID;
+	local name;
+	local texture;
+	local amount;
+	local locked;
 
 	for i = 1, table.getn(self.bagFrame.slots) do
 		slot = self.bagFrame.slots[i];
 
 		if slot then
-			SetItemButtonTexture(slot, nil);
-			SetItemButtonCount(slot, 0);
+			data = GHI_GetContainerInfo(
+				self.GHIContainerID,
+				i
+			);
+
+			if type(data) == "table" then
+				ID = data.ID;
+				name, texture = GHI_GetItemInfo(ID);
+
+				amount = data.amount or 0;
+				locked = data.locked;
+
+				SetItemButtonTexture(slot, texture);
+				SetItemButtonCount(slot, amount);
+				SetItemButtonDesaturated(
+					slot,
+					locked,
+					0.5,
+					0.5,
+					0.5
+				);
+
+				slot.ID = ID;
+				slot.number = i;
+				slot.count = amount;
+				slot.hasItem = 1;
+			else
+				SetItemButtonTexture(slot, nil);
+				SetItemButtonCount(slot, 0);
+				SetItemButtonDesaturated(
+					slot,
+					nil,
+					0.5,
+					0.5,
+					0.5
+				);
+
+				slot.ID = nil;
+				slot.number = i;
+				slot.count = 0;
+				slot.hasItem = nil;
+			end
 		end
+	end
+end
+
+function GHU_Stash:BindGHIContainer(stash)
+	if not stash then
+		return false;
+	end
+
+	if not stash.items then
+		stash.items = {};
+	end
+
+	if not GHI_ContainerData then
+		GHI_ContainerData = {};
+	end
+
+	GHI_ContainerData[self.GHIContainerID] = stash.items;
+
+	if self.bagFrame then
+		self.bagFrame:SetID(self.GHIContainerID);
+	end
+
+	return true;
+end
+
+
+function GHU_Stash:UnbindGHIContainer()
+	local cursorType;
+	local cursorDetails;
+
+	if type(GHI_GetCursor) == "function" then
+		cursorType, cursorDetails = GHI_GetCursor();
+
+		-- Do not leave a stash item locked on the GHI cursor
+		-- after the stash ceases to be available.
+		if cursorType == "item"
+			and cursorDetails
+			and cursorDetails.ItemOrigBag == self.GHIContainerID then
+
+			GHI_ResetCursor();
+		end
+	end
+
+	if type(GHI_ContainerData) == "table" then
+		GHI_ContainerData[self.GHIContainerID] = nil;
 	end
 end
 
@@ -255,6 +858,13 @@ function GHU_Stash:GetCurrentLocation()
 	};
 end
 
+function GHU_Stash:CloseBag()
+	self:UnbindGHIContainer();
+
+	if self.bagFrame then
+		self.bagFrame:Hide();
+	end
+end
 
 function GHU_Stash:GetLocationID()
 	local location = self:GetCurrentLocation();
@@ -316,31 +926,47 @@ end
 
 function GHU_Stash:FindNearbyStashes(currentLocation)
 	local found = {};
+	local seen = {};
+
+	local sources = {
+		self.stashes,
+		self.replicaStashes,
+	};
+
+	local sourceIndex;
+	local source;
+	local stashID;
 	local stash;
 
-	if not self.stashes then
-		return found;
-	end
+	for sourceIndex = 1, table.getn(sources) do
+		source = sources[sourceIndex];
 
-	for _, stash in pairs(self.stashes) do
-		if stash.location
-			and stash.location.continent == currentLocation.continent
-			and stash.location.zone == currentLocation.zone then
+		for stashID, stash in pairs(source or {}) do
+			if not seen[stashID]
+				and stash.location
+				and stash.location.continent == currentLocation.continent
+				and stash.location.zone == currentLocation.zone then
 
-			local xDistance = currentLocation.x - stash.location.x;
-			local yDistance = currentLocation.y - stash.location.y;
+				local xDistance =
+					currentLocation.x - stash.location.x;
 
-			local distance = math.sqrt(
-				(xDistance * xDistance)
-				+
-				(yDistance * yDistance)
-			);
+				local yDistance =
+					currentLocation.y - stash.location.y;
 
-			if distance <= self.searchTolerance then
-				table.insert(found, {
-					stash = stash,
-					distance = distance,
-				});
+				local distance = math.sqrt(
+					(xDistance * xDistance)
+					+
+					(yDistance * yDistance)
+				);
+
+				if distance <= self.searchTolerance then
+					table.insert(found, {
+						stash = stash,
+						distance = distance,
+					});
+
+					seen[stashID] = true;
+				end
 			end
 		end
 	end
@@ -371,6 +997,156 @@ function GHU_Stash:ShowSearchResults(found)
 	end
 end
 
+function GHU_Stash:CreateStash()
+	local location = self:GetCurrentLocation();
+
+	if not location then
+		self:AddMessage("You cannot create a stash here.");
+		return;
+	end
+
+	local playerName = self:GetPlayerName();
+
+	if not playerName then
+		self:AddMessage("Unable to determine stash creator.");
+		return;
+	end
+
+    local stashID = self:GenerateStashID(location);
+
+    if not stashID then
+	    self:AddMessage("Unable to generate a stash ID.");
+	    return;
+    end
+
+    local timestamp = time();
+
+    local stash = {
+	    id = stashID,
+	    creator = playerName,
+	    creatorChecksum = self:GetNameChecksum(playerName),
+
+	    created = timestamp,
+	    updated = timestamp,
+	    updateSerial = self:GetNextUpdateSerial(timestamp),
+	    lastEditor = playerName,
+
+	    location = {
+		    continent = location.continent,
+		    zone = location.zone,
+		    zoneName = location.zoneName,
+		    subZoneName = location.subZoneName,
+		    x = location.x,
+		    y = location.y,
+	    },
+
+	    items = {},
+    };
+
+    self.stashes[stashID] = stash;
+    self.currentStash = stash;
+
+    self:PublishStash(stash);
+
+    self:AddMessage("You create a hidden stash.");
+
+    -- Open both inventories so the player can immediately
+    -- place GHI items into the new stash.
+    self:OpenGHIBackpack();
+    self:OpenBag(stash);
+end
+
+function GHU_Stash:DestroyStash()
+	local stash = self.currentStash;
+
+	if not stash then
+		self:AddMessage("You have not discovered a stash to destroy.");
+		return;
+	end
+
+	if not self:IsAtLocation(stash) then
+		self:AddMessage("You are not close enough to the stash.");
+		return;
+	end
+
+	if not stash.id or not self.stashes[stash.id] then
+		self:AddMessage("The stash no longer exists.");
+		self.currentStash = nil;
+		return;
+	end
+
+	self.stashes[stash.id] = nil;
+
+    if self.bagFrame and self.bagFrame:IsShown() then
+	    self:CloseBag();
+    end
+
+	self.currentStash = nil;
+
+	self:AddMessage("You destroy the hidden stash.");
+end
+
+function GHU_Stash:HookGHI()
+	if not self.hooked.GHI_UpdateContainers
+		and type(GHI_UpdateContainers) == "function" then
+
+		self.hooked.GHI_UpdateContainers = GHI_UpdateContainers;
+
+		GHI_UpdateContainers = function()
+			GHU_Stash.hooked.GHI_UpdateContainers();
+
+			if GHU_Stash.bagFrame
+				and GHU_Stash.bagFrame:IsShown() then
+
+				GHU_Stash:UpdateBag();
+			end
+		end
+	end
+
+
+	if not self.hooked.GHI_PlaceContainerItem
+		and type(GHI_PlaceContainerItem) == "function" then
+
+		self.hooked.GHI_PlaceContainerItem =
+			GHI_PlaceContainerItem;
+
+		GHI_PlaceContainerItem = function(frame)
+			local targetBag = nil;
+			local originBag = nil;
+
+			if frame and frame:GetParent() then
+				targetBag = frame:GetParent():GetID();
+			end
+
+			if type(GHI_GetCursor) == "function" then
+				local cursorType;
+				local details;
+
+				cursorType, details = GHI_GetCursor();
+
+				if cursorType == "item" and details then
+					originBag = details.ItemOrigBag;
+				end
+			end
+
+			GHU_Stash.hooked.GHI_PlaceContainerItem(frame);
+
+			if targetBag == GHU_Stash.GHIContainerID
+				or originBag == GHU_Stash.GHIContainerID then
+
+				if GHU_Stash.currentStash then
+					GHU_Stash:TouchStash(
+						GHU_Stash.currentStash
+					);
+
+					GHU_Stash:PublishStash(
+						GHU_Stash.currentStash
+					);
+				end
+			end
+		end
+	end
+end
 
 function GHU_Stash:Search()
 	local location = self:GetCurrentLocation();
@@ -379,6 +1155,12 @@ function GHU_Stash:Search()
 		self:AddMessage("You cannot search for a stash here.");
 		return;
 	end
+
+	if self.bagFrame and self.bagFrame:IsShown() then
+		self:CloseBag();
+	end
+
+	self.currentStash = nil;
 
 	local found = self:FindNearbyStashes(location);
 
@@ -390,15 +1172,25 @@ function GHU_Stash:Search()
 	self:AddMessage("You find no signs of a hidden stash.");
 end
 
-
 GHU_Stash:RegisterEvent("VARIABLES_LOADED");
+GHU_Stash:RegisterEvent("PLAYER_LOGOUT");
+GHU_Stash:RegisterEvent("PLAYER_ENTERING_WORLD");
+GHU_Stash:RegisterEvent("ZONE_CHANGED_NEW_AREA");
 
 GHU_Stash:SetScript("OnEvent", function()
 	if event == "VARIABLES_LOADED" then
 		GHU_Stash:Init();
+
+	elseif event == "PLAYER_ENTERING_WORLD" then
+		GHU_Stash:ScheduleZoneSync();
+
+	elseif event == "ZONE_CHANGED_NEW_AREA" then
+		GHU_Stash:ScheduleZoneSync();
+
+	elseif event == "PLAYER_LOGOUT" then
+		GHU_Stash:UnbindGHIContainer();
 	end
 end);
-
 
 SLASH_GHUSTASH1 = "/stash";
 
@@ -426,97 +1218,22 @@ SlashCmdList["GHUSTASH"] = function(msg)
 	end
 end
 
-function GHU_Stash:CreateStash()
-	local location = self:GetCurrentLocation();
-
-	if not location then
-		self:AddMessage("You cannot create a stash here.");
-		return;
-	end
-
-	local playerName = self:GetPlayerName();
-
-	if not playerName then
-		self:AddMessage("Unable to determine stash creator.");
-		return;
-	end
-
-	local serial = GHU_StashData.nextStashID;
-
-	GHU_StashData.nextStashID = serial + 1;
-
-	local stashID = playerName .. ":" .. tostring(serial);
-
-    local stash = {
-	    id = stashID,
-	    creator = playerName,
-	    revision = 1,
-
-	    location = {
-		    continent = location.continent,
-		    zone = location.zone,
-		    zoneName = location.zoneName,
-		    subZoneName = location.subZoneName,
-		    x = location.x,
-		    y = location.y,
-	    },
-
-	    items = {},
-    };
-
-	self.stashes[stashID] = stash;
-	self.currentStash = stash;
-
-	self:AddMessage("You create a hidden stash.");
-end
-
-function GHU_Stash:DestroyStash()
-	local stash = self.currentStash;
-
-	if not stash then
-		self:AddMessage("You have not discovered a stash to destroy.");
-		return;
-	end
-
-	if not self:IsAtLocation(stash) then
-		self:AddMessage("You are not close enough to the stash.");
-		return;
-	end
-
-	if not stash.id or not self.stashes[stash.id] then
-		self:AddMessage("The stash no longer exists.");
-		self.currentStash = nil;
-		return;
-	end
-
-	self.stashes[stash.id] = nil;
-
-    if self.bagFrame then
-	    self.bagFrame:Hide();
-    end
-
-	self.currentStash = nil;
-
-	self:AddMessage("You destroy the hidden stash.");
+function GHU_Stash:ScheduleZoneSync()
+	self.zoneSyncPending = true;
+	self.zoneSyncElapsed = 0;
 end
 
 
-function GHU_Stash:Search()
-	local location = self:GetCurrentLocation();
+function GHU_Stash:Update(elapsed)
+	if self.zoneSyncPending then
+		self.zoneSyncElapsed =
+			self.zoneSyncElapsed + elapsed;
 
-	if not location then
-		self:AddMessage("You cannot search for a stash here.");
-		return;
+		if self.zoneSyncElapsed >= self.zoneSyncDelay then
+			self.zoneSyncPending = false;
+			self.zoneSyncElapsed = 0;
+
+			self:SynchronizeCurrentZone();
+		end
 	end
-
-	self.currentStash = nil;
-
-	local found = self:FindNearbyStashes(location);
-
-	if found and table.getn(found) > 0 then
-		self:ShowSearchResults(found);
-		return;
-	end
-
-	self:AddMessage("You find no signs of a hidden stash.");
 end
