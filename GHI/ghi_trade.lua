@@ -596,6 +596,7 @@ function GHI_CancelAcceptTrade()
 end
 
 function GHI_AcceptTrade()
+    GHI_Message("DEBUG: GHI_AcceptTrade FIRED");
 	local player = TradeFrameRecipientNameText:GetText();
 	--GHR_Message(player);
 	--  Delete items traded away
