@@ -11,6 +11,25 @@ GHU_Stash.currentStash = nil;
 
 GHU_Stash.channelName = "GHUstashUHG";
 
+GHU_Stash.transportPrefix = "GHUS1";
+GHU_Stash.transportSerial = 0;
+
+GHU_Stash.transportChunkSize = 180;
+GHU_Stash.transportSendDelay = 0.20;
+GHU_Stash.transportSendElapsed = 0;
+
+GHU_Stash.transportSendQueue = {};
+GHU_Stash.transportIncoming = {};
+
+GHU_Stash.transportTimeout = 15;
+GHU_Stash.manifestWait = 3;
+GHU_Stash.stashRequestTimeout = 6;
+
+GHU_Stash.base64Alphabet =
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	.. "abcdefghijklmnopqrstuvwxyz"
+	.. "0123456789+/";
+
 -- Physical-zone synchronization.
 GHU_Stash.prioritySyncPending = false;
 GHU_Stash.priorityLocation = nil;
@@ -87,36 +106,358 @@ function GHU_Stash:InitCommunication()
 		return;
 	end
 
-	if not GHI
-		or type(GHI.RegisterRecieve) ~= "function"
-		or type(GHI.SendMessage) ~= "function" then
-
-		self:AddMessage("GHU stash communication is not available.");
+	if not LibStub then
+		self:AddMessage(
+			"GHU stash communication is not available."
+		);
 		return;
 	end
 
-	GHI:RegisterRecieve(
-		"GHU_StashPublish",
-		function(sender, stash)
-			GHU_Stash:ReceivePublishedStash(
-				sender,
-				stash
-			);
-		end
-	);
+	self.serializer =
+		LibStub("AceSerializer-3.0", true);
 
-	GHI:RegisterRecieve(
-		"GHU_StashSyncRequest",
-		function(sender, continent, zone)
-			GHU_Stash:ReceiveZoneSyncRequest(
-				sender,
-				continent,
-				zone
-			);
-		end
-	);
+	if not self.serializer then
+		self:AddMessage(
+			"GHU stash serializer is not available."
+		);
+		return;
+	end
+
+	self.transportSendQueue = {};
+	self.transportIncoming = {};
 
 	self.hooked.communication = true;
+end
+
+function GHU_Stash:Base64Encode(text)
+	if not text then
+		return "";
+	end
+
+	local alphabet = self.base64Alphabet;
+	local result = {};
+
+	local length = string.len(text);
+	local i = 1;
+
+	while i <= length do
+		local b1 = string.byte(text, i);
+		local b2 = nil;
+		local b3 = nil;
+
+		if i + 1 <= length then
+			b2 = string.byte(text, i + 1);
+		end
+
+		if i + 2 <= length then
+			b3 = string.byte(text, i + 2);
+		end
+
+		local c1 = math.floor(b1 / 4);
+
+		local c2 =
+			math.mod(b1, 4) * 16;
+
+		if b2 then
+			c2 = c2 + math.floor(b2 / 16);
+		end
+
+		local c3 = 0;
+		local c4 = 0;
+
+		if b2 then
+			c3 =
+				math.mod(b2, 16) * 4;
+
+			if b3 then
+				c3 =
+					c3 + math.floor(b3 / 64);
+			end
+		end
+
+		if b3 then
+			c4 = math.mod(b3, 64);
+		end
+
+		table.insert(
+			result,
+			string.sub(
+				alphabet,
+				c1 + 1,
+				c1 + 1
+			)
+		);
+
+		table.insert(
+			result,
+			string.sub(
+				alphabet,
+				c2 + 1,
+				c2 + 1
+			)
+		);
+
+		if b2 then
+			table.insert(
+				result,
+				string.sub(
+					alphabet,
+					c3 + 1,
+					c3 + 1
+				)
+			);
+		else
+			table.insert(result, "=");
+		end
+
+		if b3 then
+			table.insert(
+				result,
+				string.sub(
+					alphabet,
+					c4 + 1,
+					c4 + 1
+				)
+			);
+		else
+			table.insert(result, "=");
+		end
+
+		i = i + 3;
+	end
+
+	return table.concat(result);
+end
+
+function GHU_Stash:GetBase64Value(character)
+	if not character
+		or character == "=" then
+
+		return nil;
+	end
+
+	local position =
+		string.find(
+			self.base64Alphabet,
+			character,
+			1,
+			true
+		);
+
+	if not position then
+		return nil;
+	end
+
+	return position - 1;
+end
+
+
+function GHU_Stash:Base64Decode(text)
+	if not text then
+		return nil;
+	end
+
+	local result = {};
+	local length = string.len(text);
+	local i = 1;
+
+	while i <= length do
+		local a = string.sub(text, i, i);
+		local b = string.sub(text, i + 1, i + 1);
+		local c = string.sub(text, i + 2, i + 2);
+		local d = string.sub(text, i + 3, i + 3);
+
+		local v1 = self:GetBase64Value(a);
+		local v2 = self:GetBase64Value(b);
+		local v3 = self:GetBase64Value(c);
+		local v4 = self:GetBase64Value(d);
+
+		if v1 == nil or v2 == nil then
+			return nil;
+		end
+
+		local b1 =
+			(v1 * 4)
+			+
+			math.floor(v2 / 16);
+
+		table.insert(
+			result,
+			string.char(b1)
+		);
+
+		if c ~= "=" and v3 ~= nil then
+			local b2 =
+				(math.mod(v2, 16) * 16)
+				+
+				math.floor(v3 / 4);
+
+			table.insert(
+				result,
+				string.char(b2)
+			);
+		end
+
+		if d ~= "="
+			and v3 ~= nil
+			and v4 ~= nil then
+
+			local b3 =
+				(math.mod(v3, 4) * 64)
+				+
+				v4;
+
+			table.insert(
+				result,
+				string.char(b3)
+			);
+		end
+
+		i = i + 4;
+	end
+
+	return table.concat(result);
+end
+
+function GHU_Stash:GetNextTransportID()
+	self.transportSerial =
+		(tonumber(self.transportSerial) or 0) + 1;
+
+	return tostring(
+		self:GetNameChecksum(
+			self:GetPlayerName() or ""
+		)
+	)
+		.. "-"
+		.. tostring(time())
+		.. "-"
+		.. tostring(self.transportSerial);
+end
+
+function GHU_Stash:SendTransport(
+	messageType,
+	payload
+)
+	if not self.serializer then
+		return false;
+	end
+
+	local packet = {
+		type = messageType,
+		payload = payload,
+	};
+
+	local serialized =
+		self.serializer:Serialize(packet);
+
+	if not serialized then
+		return false;
+	end
+
+	local encoded =
+		self:Base64Encode(serialized);
+
+	local transportID =
+		self:GetNextTransportID();
+
+	local length = string.len(encoded);
+
+	local total =
+		math.ceil(
+			length / self.transportChunkSize
+		);
+
+	if total < 1 then
+		total = 1;
+	end
+
+	local part;
+
+	for part = 1, total do
+		local first =
+			((part - 1)
+			* self.transportChunkSize)
+			+ 1;
+
+		local last =
+			first
+			+ self.transportChunkSize
+			- 1;
+
+		local chunk =
+			string.sub(
+				encoded,
+				first,
+				last
+			);
+
+		local message =
+			self.transportPrefix
+			.. ":"
+			.. transportID
+			.. ":"
+			.. tostring(part)
+			.. ":"
+			.. tostring(total)
+			.. ":"
+			.. chunk;
+
+		table.insert(
+			self.transportSendQueue,
+			message
+		);
+	end
+
+	return true;
+end
+
+function GHU_Stash:ProcessTransportQueue(elapsed)
+	if not elapsed then
+		return;
+	end
+
+	if table.getn(self.transportSendQueue) == 0 then
+		self.transportSendElapsed = 0;
+		return;
+	end
+
+	self.transportSendElapsed =
+		self.transportSendElapsed + elapsed;
+
+	if self.transportSendElapsed
+		< self.transportSendDelay then
+
+		return;
+	end
+
+	self.transportSendElapsed = 0;
+
+	local channelID =
+		GetChannelName(self.channelName);
+
+	if not channelID
+		or channelID <= 0 then
+
+		self:JoinStashChannel();
+		return;
+	end
+
+	local message =
+		table.remove(
+			self.transportSendQueue,
+			1
+		);
+
+	if not message then
+		return;
+	end
+
+	SendChatMessage(
+		message,
+		"CHANNEL",
+		nil,
+		channelID
+	);
 end
 
 function GHU_Stash:GetZoneStashes(continent, zone)
@@ -270,14 +611,22 @@ end
 
 
 function GHU_Stash:Update(elapsed)
+	self:ProcessTransportQueue(elapsed);
+	self:CleanupTransportIncoming();
+
 	if self.zoneSyncPending then
 		self.zoneSyncElapsed =
 			self.zoneSyncElapsed + elapsed;
 
-		if self.zoneSyncElapsed >= self.zoneSyncDelay then
+		if self.zoneSyncElapsed
+			>= self.zoneSyncDelay then
+
 			self.zoneSyncPending = false;
 			self.zoneSyncElapsed = 0;
 
+			-- Leave synchronization disabled until
+			-- the basic channel transport is proven.
+			-- self:SynchronizeCurrentZone();
 		end
 	end
 end
@@ -319,6 +668,7 @@ function GHU_Stash:OnLoad()
 	self:RegisterEvent("PLAYER_LOGOUT");
 	self:RegisterEvent("PLAYER_ENTERING_WORLD");
 	self:RegisterEvent("ZONE_CHANGED_NEW_AREA");
+    self:RegisterEvent("CHAT_MSG_CHANNEL");
 end
 
 
@@ -347,92 +697,19 @@ function GHU_Stash:EnterCurrentZone()
 	self:ScheduleZoneSync();
 end
 
-function GHU_Stash:PublishStash(stash, target)
+function GHU_Stash:PublishStash(stash)
 	if not stash
-		or not stash.id
-		or not GHI
-		or type(GHI.SendMessage) ~= "function" then
+		or not stash.id then
 
 		return false;
 	end
 
-	-- If a specific player requested synchronization,
-	-- send the stash directly to that player.
-	if target then
-		GHI:SendMessage(
-			"WHISPER",
-			target,
-			false,
-			"GHU_StashPublish",
-			stash
-		);
-
-		return true;
-	end
-
-	local comzone;
-
-	if stash.location and stash.location.zoneName then
-		comzone = stash.location.zoneName;
-	else
-		comzone = GetZoneText();
-	end
-
-	if comzone == "City of Ironforge" then
-		comzone = "Ironforge";
-	end
-
-	local channelID;
-	local channelName;
-
-	channelID, channelName = GetChannelName(
-		"General - " .. comzone
+	return self:SendTransport(
+		"SDAT",
+		{
+			stash = stash,
+		}
 	);
-
-	if not channelID
-		or channelID <= 0
-		or not channelName then
-
-		return false;
-	end
-
-	-- Vanilla's group and raid entries occupy the first
-	-- two channel-roster indexes.
-	local rosterID = channelID + 2;
-
-	local memberCount = GetNumChannelMembers(rosterID);
-
-	-- GHI itself has historically needed this queried twice.
-	if not memberCount then
-		memberCount = GetNumChannelMembers(rosterID);
-	end
-
-	if not memberCount then
-		return false;
-	end
-
-	local myName = self:GetPlayerName();
-	local i;
-	local memberName;
-
-	for i = 1, tonumber(memberCount) do
-		memberName = GetChannelRosterInfo(rosterID, i);
-
-		if memberName
-			and memberName ~= ""
-			and memberName ~= myName then
-
-			GHI:SendMessage(
-				"WHISPER",
-				memberName,
-				false,
-				"GHU_StashPublish",
-				stash
-			);
-		end
-	end
-
-	return true;
 end
 
 function GHU_Stash:CreateBagFrame()
@@ -598,6 +875,480 @@ function GHU_Stash:CreateBagFrame()
 	end
 
 	self.bagFrame = frame;
+end
+
+function GHU_Stash:IsStashChannelEvent(
+	channelString,
+	channelNumber,
+	channelName
+)
+	local wanted =
+		string.lower(
+			self.channelName or ""
+		);
+
+	if channelName
+		and string.lower(channelName)
+			== wanted then
+
+		return true;
+	end
+
+	if channelString
+		and string.find(
+			string.lower(channelString),
+			wanted,
+			1,
+			true
+		) then
+
+		return true;
+	end
+
+	local channelID =
+		GetChannelName(self.channelName);
+
+	if channelID
+		and channelID > 0
+		and tonumber(channelNumber)
+			== tonumber(channelID) then
+
+		return true;
+	end
+
+	return false;
+end
+
+function GHU_Stash:ReceiveChannelChat(
+	message,
+	sender,
+	channelString,
+	channelNumber,
+	channelName
+)
+	if not self:IsStashChannelEvent(
+		channelString,
+		channelNumber,
+		channelName
+	) then
+
+		return;
+	end
+
+	if not message or not sender then
+		return;
+	end
+
+	if string.lower(sender)
+		== string.lower(
+			self:GetPlayerName() or ""
+		) then
+
+		return;
+	end
+
+	local prefix;
+	local transportID;
+	local part;
+	local total;
+	local data;
+
+	_, _, prefix,
+		transportID,
+		part,
+		total,
+		data =
+		string.find(
+			message,
+			"^([^:]+):([^:]+):(%d+):(%d+):(.+)$"
+		);
+
+	if prefix ~= self.transportPrefix then
+		return;
+	end
+
+	part = tonumber(part);
+	total = tonumber(total);
+
+	if not part
+		or not total
+		or part < 1
+		or part > total
+		or total > 1000 then
+
+		return;
+	end
+
+	local key =
+		string.lower(sender)
+		.. ":"
+		.. transportID;
+
+	local incoming =
+		self.transportIncoming[key];
+
+	if not incoming then
+		incoming = {
+			sender = sender,
+			total = total,
+			parts = {},
+			count = 0,
+			time = GetTime(),
+		};
+
+		self.transportIncoming[key] =
+			incoming;
+	end
+
+	if incoming.total ~= total then
+		self.transportIncoming[key] = nil;
+		return;
+	end
+
+	incoming.time = GetTime();
+
+	if not incoming.parts[part] then
+		incoming.parts[part] = data;
+		incoming.count =
+			incoming.count + 1;
+	end
+
+	if incoming.count < incoming.total then
+		return;
+	end
+
+	local chunks = {};
+	local i;
+
+	for i = 1, incoming.total do
+		if not incoming.parts[i] then
+			return;
+		end
+
+		table.insert(
+			chunks,
+			incoming.parts[i]
+		);
+	end
+
+	self.transportIncoming[key] = nil;
+
+	local encoded =
+		table.concat(chunks);
+
+	local serialized =
+		self:Base64Decode(encoded);
+
+	if not serialized then
+		return;
+	end
+
+	local success;
+	local packet;
+
+	success, packet =
+		self.serializer:Deserialize(
+			serialized
+		);
+
+	if not success
+		or type(packet) ~= "table" then
+
+		return;
+	end
+
+	self:HandleTransportMessage(
+		sender,
+		packet
+	);
+end
+
+function GHU_Stash:CleanupTransportIncoming()
+	local now = GetTime();
+	local key;
+	local incoming;
+
+	for key, incoming
+		in pairs(self.transportIncoming) do
+
+		if not incoming.time
+			or now - incoming.time
+				> self.transportTimeout then
+
+			self.transportIncoming[key] =
+				nil;
+		end
+	end
+end
+
+function GHU_Stash:HandleTransportMessage(
+	sender,
+	packet
+)
+	if type(packet) ~= "table"
+		or type(packet.type) ~= "string" then
+
+		return;
+	end
+
+	local payload =
+		packet.payload or {};
+
+	if packet.type == "MREQ" then
+		self:ReceiveManifestRequest(
+			sender,
+			payload
+		);
+
+	elseif packet.type == "MREP" then
+		self:ReceiveManifestReply(
+			sender,
+			payload
+		);
+
+	elseif packet.type == "SREQ" then
+		self:ReceiveStashDataRequest(
+			sender,
+			payload
+		);
+
+	elseif packet.type == "SDAT" then
+		if type(payload.stash)
+			== "table" then
+
+			self:ReceivePublishedStash(
+				sender,
+				payload.stash
+			);
+		end
+	end
+end
+
+function GHU_Stash:BroadcastManifestRequest(
+	requestID,
+	continent,
+	zone
+)
+	return self:SendTransport(
+		"MREQ",
+		{
+			requestID = requestID,
+			continent = continent,
+			zone = zone,
+		}
+	);
+end
+
+function GHU_Stash:ReceiveManifestRequest(
+	sender,
+	payload
+)
+	if type(payload) ~= "table" then
+		return;
+	end
+
+	local requestID =
+		payload.requestID;
+
+	local continent =
+		tonumber(payload.continent);
+
+	local zone =
+		tonumber(payload.zone);
+
+	if not requestID
+		or not continent
+		or not zone then
+
+		return;
+	end
+
+	local manifest =
+		self:BuildZoneManifest(
+			continent,
+			zone
+		);
+
+	self:SendTransport(
+		"MREP",
+		{
+			requestID = requestID,
+			requester = sender,
+			continent = continent,
+			zone = zone,
+			manifest = manifest,
+		}
+	);
+end
+
+function GHU_Stash:IsSameStashVersion(
+	a,
+	b
+)
+	if not a or not b then
+		return false;
+	end
+
+	if (tonumber(a.updated) or 0)
+		~= (tonumber(b.updated) or 0) then
+
+		return false;
+	end
+
+	if (tonumber(a.updateSerial) or 0)
+		~= (tonumber(b.updateSerial) or 0) then
+
+		return false;
+	end
+
+	if (a.deleted and true or false)
+		~= (b.deleted and true or false) then
+
+		return false;
+	end
+
+	if string.lower(a.lastEditor or "")
+		~= string.lower(b.lastEditor or "") then
+
+		return false;
+	end
+
+	return true;
+end
+
+function GHU_Stash:GetBestStash(stashID)
+	local own =
+		self.stashes
+		and self.stashes[stashID];
+
+	local replica =
+		self.replicaStashes
+		and self.replicaStashes[stashID];
+
+	if own and replica then
+		if self:IsNewerStash(
+			replica,
+			own
+		) then
+
+			return replica;
+		end
+
+		return own;
+	end
+
+	return own or replica;
+end
+
+function GHU_Stash:MergeManifest(
+	holder,
+	manifest
+)
+	if not self.syncRequest
+		or type(manifest) ~= "table" then
+
+		return;
+	end
+
+	local stashID;
+	local version;
+
+	for stashID, version
+		in pairs(manifest) do
+
+		if type(version) == "table" then
+			local best =
+				self.syncRequest.best[
+					stashID
+				];
+
+			if not best
+				or self:IsNewerStash(
+					version,
+					best
+				) then
+
+				self.syncRequest.best[
+					stashID
+				] = version;
+
+				self.syncRequest.holders[
+					stashID
+				] = {
+					holder
+				};
+
+			elseif self:IsSameStashVersion(
+				version,
+				best
+			) then
+
+				local holders =
+					self.syncRequest.holders[
+						stashID
+					];
+
+				if not holders then
+					holders = {};
+					self.syncRequest.holders[
+						stashID
+					] = holders;
+				end
+
+				local found = false;
+				local i;
+
+				for i = 1,
+					table.getn(holders) do
+
+					if holders[i]
+						== holder then
+
+						found = true;
+						break;
+					end
+				end
+
+				if not found then
+					table.insert(
+						holders,
+						holder
+					);
+				end
+			end
+		end
+	end
+end
+
+function GHU_Stash:ReceiveManifestReply(
+	sender,
+	payload
+)
+	if not self.syncRequest
+		or type(payload) ~= "table" then
+
+		return;
+	end
+
+	if payload.requestID
+		~= self.syncRequest.id then
+
+		return;
+	end
+
+	if string.lower(
+		payload.requester or ""
+	) ~= string.lower(
+		self:GetPlayerName() or ""
+	) then
+
+		return;
+	end
+
+	self:MergeManifest(
+		sender,
+		payload.manifest
+	);
 end
 
 function GHU_Stash:TombstoneStash(stash)
@@ -767,96 +1518,6 @@ function GHU_Stash:OpenBag(stash)
 	self:UpdateBag();
 
 	self.bagFrame:Show();
-end
-
-function GHU_Stash:ReceiveZoneSyncRequest(
-	sender,
-	continent,
-	zone
-)
-	continent = tonumber(continent);
-	zone = tonumber(zone);
-
-	if not sender or not continent or not zone then
-		return;
-	end
-
-	local stashes = self:GetZoneStashes(
-		continent,
-		zone
-	);
-
-	local stashID;
-	local stash;
-
-	for stashID, stash in pairs(stashes) do
-		self:PublishStash(stash, sender);
-	end
-end
-
-function GHU_Stash:SendZoneSyncRequest(location)
-	if not location then
-		return false;
-	end
-
-	local comzone = location.zoneName or GetZoneText();
-
-	if comzone == "City of Ironforge" then
-		comzone = "Ironforge";
-	end
-
-	local channelID;
-	local channelName;
-
-	channelID, channelName = GetChannelName(
-		"General - " .. comzone
-	);
-
-	if not channelID
-		or channelID <= 0
-		or not channelName then
-
-		return false;
-	end
-
-	local rosterID = channelID + 2;
-
-	local memberCount =
-		GetNumChannelMembers(rosterID);
-
-	if not memberCount then
-		memberCount =
-			GetNumChannelMembers(rosterID);
-	end
-
-	if not memberCount then
-		return false;
-	end
-
-	local myName = self:GetPlayerName();
-	local memberName;
-	local i;
-
-	for i = 1, tonumber(memberCount) do
-		memberName =
-			GetChannelRosterInfo(rosterID, i);
-
-		if memberName
-			and memberName ~= ""
-			and memberName ~= myName then
-
-			GHI:SendMessage(
-				"WHISPER",
-				memberName,
-				false,
-				"GHU_StashSyncRequest",
-				location.continent,
-				location.zone
-			);
-		end
-	end
-
-	return true;
 end
 
 function GHU_Stash:UpdateBag()
@@ -1376,6 +2037,76 @@ function GHU_Stash:CreateStash()
     self:OpenBag(stash);
 end
 
+function GHU_Stash:RequestStashData(
+	stashID,
+	version,
+	source
+)
+	if not stashID
+		or not version
+		or not source then
+
+		return false;
+	end
+
+	return self:SendTransport(
+		"SREQ",
+		{
+			stashID = stashID,
+			version = version,
+			source = source,
+		}
+	);
+end
+
+function GHU_Stash:ReceiveStashDataRequest(
+	sender,
+	payload
+)
+	if type(payload) ~= "table" then
+		return;
+	end
+
+	if string.lower(
+		payload.source or ""
+	) ~= string.lower(
+		self:GetPlayerName() or ""
+	) then
+
+		return;
+	end
+
+	local stash =
+		self:GetBestStash(
+			payload.stashID
+		);
+
+	if not stash then
+		return;
+	end
+
+	local requested =
+		payload.version;
+
+	if type(requested) ~= "table" then
+		return;
+	end
+
+	-- We may have exactly the requested version
+	-- or something even newer.
+	if self:IsSameStashVersion(
+		stash,
+		requested
+	)
+		or self:IsNewerStash(
+			stash,
+			requested
+		) then
+
+		self:PublishStash(stash);
+	end
+end
+
 function GHU_Stash:DestroyStash()
 	local stash = self.currentStash;
 
@@ -1526,11 +2257,20 @@ GHU_Stash:SetScript("OnEvent", function()
 		GHU_Stash:Init();
 
 	elseif event == "PLAYER_ENTERING_WORLD" then
+		GHU_Stash:JoinStashChannel();
 		GHU_Stash:EnterCurrentZone();
 
-    elseif event == "PLAYER_ENTERING_WORLD" then
-	    GHU_Stash:JoinStashChannel();
-	    GHU_Stash:EnterCurrentZone();
+	elseif event == "ZONE_CHANGED_NEW_AREA" then
+		GHU_Stash:EnterCurrentZone();
+
+    elseif event == "CHAT_MSG_CHANNEL" then
+	    GHU_Stash:ReceiveChannelChat(
+		    arg1,
+		    arg2,
+		    arg4,
+		    arg8,
+		    arg9
+	    );
 
 	elseif event == "PLAYER_LOGOUT" then
 		GHU_Stash:UnbindGHIContainer();
