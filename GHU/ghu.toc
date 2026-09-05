@@ -2,7 +2,7 @@
 ## Title: Gryphonheart UI
 ## Version: 0.3
 ## Notes: Hooking of the Blizzard frames for other addons
-## SavedVariablesPerCharacter: GHU_MiscData
+## SavedVariablesPerCharacter: GHU_MiscData, GHU_StashData
 
 
 ghu.lua
@@ -23,5 +23,6 @@ ghu_talk.lua
 ghu_talk.xml
 ghu_buff.lua
 ghu_target.lua
+ghu_stash.lua
 
 ghu_test.lua
