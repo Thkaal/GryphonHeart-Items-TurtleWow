@@ -3,6 +3,7 @@ GHI = GHI or {};
 GHI.ownName = UnitName("player");
 local GHI5_recv = {};
 local GHI5_seq = 0;
+local GHI5_eventFrame = nil;
 
 local function ghi5_count(t)
     local n=0; for _ in pairs(t) do n=n+1; end; return n;
@@ -129,12 +130,32 @@ function GHI:SendPrioritizedMessage(prio,channel,player,...)
 end
 function GHI_CommunicationHookings()
 
-	-- Route GHI communication events through GHI's normal event dispatcher.
-	-- Merely registering CHAT_MSG_WHISPER is not enough; the received
-	-- whisper must actually be passed to GHI5_OnWhisperMessage().
-	if type(GHI_RegEvent) == "function" then
+	-- GHI5 owns its communication event frame directly.
+	-- This avoids depending on GHI's general event dispatcher for
+	-- private transport whispers.
+	if GHI5_eventFrame then
+		return;
+	end
 
-		GHI_RegEvent("CHAT_MSG_ADDON",function()
+	local f = CreateFrame("Frame");
+
+	f:RegisterEvent("CHAT_MSG_WHISPER");
+	f:RegisterEvent("CHAT_MSG_ADDON");
+
+	f:SetScript("OnEvent",function()
+
+		if event == "CHAT_MSG_WHISPER" then
+
+			if type(GHI5_OnWhisperMessage) == "function" then
+				GHI5_OnWhisperMessage(
+					arg1, -- message text
+					arg2  -- sender
+				);
+			end
+
+
+		elseif event == "CHAT_MSG_ADDON" then
+
 			if type(GHI5_OnAddonMessage) == "function" then
 				GHI5_OnAddonMessage(
 					arg1, -- prefix
@@ -143,18 +164,11 @@ function GHI_CommunicationHookings()
 					arg4  -- sender
 				);
 			end
-		end);
 
-		GHI_RegEvent("CHAT_MSG_WHISPER",function()
-			if type(GHI5_OnWhisperMessage) == "function" then
-				GHI5_OnWhisperMessage(
-					arg1, -- whisper text
-					arg2  -- sender
-				);
-			end
-		end);
+		end
+	end);
 
-	end
+	GHI5_eventFrame = f;
 end
 function GHI5_OnAddonMessage(prefix,text,distribution,sender)
     if prefix~="GHI5" then return; end
@@ -1340,4 +1354,3 @@ function GHI_MainMenuBarPerformanceBarFrame_OnEnter(f)
 end
 
 PERFORMANCEBAR_UPDATE_INTERVAL = 1;
-
