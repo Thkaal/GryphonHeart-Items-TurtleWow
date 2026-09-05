@@ -18,7 +18,7 @@ local GHI5_CHANNEL_ID = 0;
 local GHI5_CHANNEL_RETRY = 2;
 
 -- Temporary buff-transport diagnostics.  Set this to false after testing.
-GHI5_BUFF_DEBUG = true;
+GHI5_BUFF_DEBUG = false;
 
 local function ghi5_buff_debug(text)
     if not GHI5_BUFF_DEBUG then return; end
