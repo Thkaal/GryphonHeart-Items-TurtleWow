@@ -87,6 +87,7 @@ function GHI_Stash:Init()
 
 	self:HookGHI();
 	self:InitCommunication();
+	self:CreateToolbar();
 
 	self.initialized = true;
 end
@@ -2271,6 +2272,145 @@ end);
 GHI_Stash:SetScript("OnUpdate", function()
 	GHI_Stash:Update(arg1);
 end);
+
+function GHI_Stash:CreateToolbar()
+	if self.toolbarButtons then
+		return;
+	end
+
+	if not GHI_BackpackButton then
+		return;
+	end
+
+	self.toolbarButtons = {};
+
+	local buttons = {
+		{
+			name = "Create",
+			icon = "Interface\\Icons\\INV_Misc_Bag_10",
+			tooltip = "Create Hidden Stash",
+			func = function()
+				GHI_Stash:CreateStash();
+			end,
+		},
+		{
+			name = "Search",
+			icon = "Interface\\Icons\\INV_Misc_Spyglass_03",
+			tooltip = "Search for Hidden Stashes",
+			func = function()
+				GHI_Stash:Search();
+			end,
+		},
+		{
+			name = "Open",
+			icon = "Interface\\Icons\\INV_Misc_Bag_07_Blue",
+			tooltip = "Open Discovered Stash",
+			func = function()
+				if GHI_Stash.currentStash then
+					GHI_Stash:OpenBag(
+						GHI_Stash.currentStash
+					);
+				else
+					GHI_Stash:AddMessage(
+						"You have not discovered a stash."
+					);
+				end
+			end,
+		},
+		{
+			name = "Destroy",
+			icon = "Interface\\Icons\\Spell_Fire_Incinerate",
+			tooltip = "Destroy Hidden Stash",
+			func = function()
+				GHI_Stash:DestroyStash();
+			end,
+		},
+	};
+
+	local i;
+	local info;
+	local button;
+
+	for i = 1, table.getn(buttons) do
+		info = buttons[i];
+
+		button = CreateFrame(
+			"Button",
+			"GHI_StashToolbar" .. info.name,
+			UIParent,
+			"ItemButtonTemplate"
+		);
+
+		button:SetWidth(32);
+		button:SetHeight(32);
+
+		if i == 1 then
+			button:SetPoint(
+				"LEFT",
+				GHI_BackpackButton,
+				"RIGHT",
+				5,
+				0
+			);
+		else
+			button:SetPoint(
+				"LEFT",
+				self.toolbarButtons[i - 1],
+				"RIGHT",
+				3,
+				0
+			);
+		end
+
+		SetItemButtonTexture(
+			button,
+			info.icon
+		);
+
+		button:RegisterForClicks(
+			"LeftButtonUp"
+		);
+
+		button.action = info.func;
+		button.tooltipText = info.tooltip;
+
+		button:SetScript(
+			"OnClick",
+			function()
+				if this.action then
+					this.action();
+				end
+			end
+		);
+
+		button:SetScript(
+			"OnEnter",
+			function()
+				GameTooltip:SetOwner(
+					this,
+					"ANCHOR_TOP"
+				);
+
+				GameTooltip:SetText(
+					this.tooltipText or
+					"Hidden Stash"
+				);
+
+				GameTooltip:Show();
+			end
+		);
+
+		button:SetScript(
+			"OnLeave",
+			function()
+				GameTooltip:Hide();
+			end
+		);
+
+		self.toolbarButtons[i] =
+			button;
+	end
+end
 
 
 SLASH_GHUSTASH1 = "/stash";
