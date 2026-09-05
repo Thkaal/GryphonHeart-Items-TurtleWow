@@ -9,6 +9,25 @@ GHU_Stash.zoneSyncDelay = 2;
 
 GHU_Stash.currentStash = nil;
 
+GHU_Stash.channelName = "GHUstashUHG";
+
+-- Physical-zone synchronization.
+GHU_Stash.prioritySyncPending = false;
+GHU_Stash.priorityLocation = nil;
+
+-- Background zone cycle.
+GHU_Stash.cycleActive = false;
+GHU_Stash.cycleZones = {};
+GHU_Stash.cycleIndex = 1;
+GHU_Stash.cyclePaused = false;
+
+-- Current reconciliation transaction.
+GHU_Stash.syncRequest = nil;
+GHU_Stash.syncRequestSerial = 0;
+
+-- Full-stash requests currently in flight.
+GHU_Stash.pendingStashRequests = {};
+
 -- How close the player must be to interact with a stash.
 -- Coordinates run from 0.0 to 1.0, so 0.005 is roughly
 -- half of one percent of the zone map.
@@ -49,6 +68,20 @@ function GHU_Stash:Init()
 	self:InitCommunication();
 end
 
+function GHU_Stash:JoinStashChannel()
+	if not self.channelName then
+		return false;
+	end
+
+	local channelID = GetChannelName(self.channelName);
+
+	if not channelID or channelID == 0 then
+		JoinChannelByName(self.channelName);
+	end
+
+	return true;
+end
+
 function GHU_Stash:InitCommunication()
 	if self.hooked.communication then
 		return;
@@ -62,15 +95,26 @@ function GHU_Stash:InitCommunication()
 		return;
 	end
 
-    GHI:RegisterRecieve(
-	    "GHU_StashPublish",
-	    function(sender, stash)
-		    GHU_Stash:ReceivePublishedStash(
-			    sender,
-			    stash
-		    );
-	    end
-    );
+	GHI:RegisterRecieve(
+		"GHU_StashPublish",
+		function(sender, stash)
+			GHU_Stash:ReceivePublishedStash(
+				sender,
+				stash
+			);
+		end
+	);
+
+	GHI:RegisterRecieve(
+		"GHU_StashSyncRequest",
+		function(sender, continent, zone)
+			GHU_Stash:ReceiveZoneSyncRequest(
+				sender,
+				continent,
+				zone
+			);
+		end
+	);
 
 	self.hooked.communication = true;
 end
@@ -132,8 +176,11 @@ function GHU_Stash:IsNewerStash(incoming, existing)
 		return false;
 	end
 
-	local incomingSerial = tonumber(incoming.updateSerial) or 0;
-	local existingSerial = tonumber(existing.updateSerial) or 0;
+	local incomingSerial =
+		tonumber(incoming.updateSerial) or 0;
+
+	local existingSerial =
+		tonumber(existing.updateSerial) or 0;
 
 	if incomingSerial > existingSerial then
 		return true;
@@ -141,9 +188,23 @@ function GHU_Stash:IsNewerStash(incoming, existing)
 		return false;
 	end
 
-	-- Final deterministic tie breaker.
-	local incomingEditor = string.lower(incoming.lastEditor or "");
-	local existingEditor = string.lower(existing.lastEditor or "");
+	-- If two records somehow have exactly the same
+	-- version, a tombstone wins over a live copy.
+	local incomingDeleted =
+		incoming.deleted and true or false;
+
+	local existingDeleted =
+		existing.deleted and true or false;
+
+	if incomingDeleted ~= existingDeleted then
+		return incomingDeleted;
+	end
+
+	local incomingEditor =
+		string.lower(incoming.lastEditor or "");
+
+	local existingEditor =
+		string.lower(existing.lastEditor or "");
 
 	return incomingEditor > existingEditor;
 end
@@ -155,6 +216,10 @@ function GHU_Stash:ReceivePublishedStash(sender, stash)
 
 	if not stash.id or stash.id == "" then
 		return;
+	end
+
+	if stash.deleted then
+		stash.items = nil;
 	end
 
 	-- Cursor locking is local state and must never become
@@ -175,46 +240,28 @@ function GHU_Stash:ReceivePublishedStash(sender, stash)
 	-- a newer remote copy may represent changes made while
 	-- we were offline.
 	--
-	if self.stashes[stash.id] then
-		if self:IsNewerStash(stash, self.stashes[stash.id]) then
-			self.stashes[stash.id] = stash;
+    if self.stashes[stash.id] then
+	    if self:IsNewerStash(
+		    stash,
+		    self.stashes[stash.id]
+	    ) then
 
-			if self.currentStash
-				and self.currentStash.id == stash.id then
+		    self.stashes[stash.id] = stash;
+		    self:HandleAcceptedStash(stash);
+	    end
 
-				self.currentStash = stash;
+	    return;
+    end
 
-				if self.bagFrame
-					and self.bagFrame:IsShown() then
+	    local old = self.replicaStashes[stash.id];
 
-					self:BindGHIContainer(stash);
-					self:UpdateBag();
-				end
-			end
-		end
+	    if not old
+		    or self:IsNewerStash(stash, old) then
 
-		return;
-	end
-
-	local old = self.replicaStashes[stash.id];
-
-	if not old or self:IsNewerStash(stash, old) then
-		self.replicaStashes[stash.id] = stash;
-
-		if self.currentStash
-			and self.currentStash.id == stash.id then
-
-			self.currentStash = stash;
-
-			if self.bagFrame
-				and self.bagFrame:IsShown() then
-
-				self:BindGHIContainer(stash);
-				self:UpdateBag();
-			end
-		end
-	end
-end
+		    self.replicaStashes[stash.id] = stash;
+		    self:HandleAcceptedStash(stash);
+	    end
+    end
 
 function GHU_Stash:ScheduleZoneSync()
 	self.zoneSyncPending = true;
@@ -231,7 +278,6 @@ function GHU_Stash:Update(elapsed)
 			self.zoneSyncPending = false;
 			self.zoneSyncElapsed = 0;
 
-			self:SynchronizeCurrentZone();
 		end
 	end
 end
@@ -269,12 +315,36 @@ function GHU_Stash:GenerateStashID(location)
 end
 
 function GHU_Stash:OnLoad()
-	-- SavedVariables and communication hooks can be initialized here later.
+	self:RegisterEvent("VARIABLES_LOADED");
+	self:RegisterEvent("PLAYER_LOGOUT");
+	self:RegisterEvent("PLAYER_ENTERING_WORLD");
+	self:RegisterEvent("ZONE_CHANGED_NEW_AREA");
 end
 
 
 function GHU_Stash:GetPlayerName()
 	return UnitName("player");
+end
+
+function GHU_Stash:EnterCurrentZone()
+	local location = self:GetCurrentLocation();
+
+	if not location then
+		return;
+	end
+
+	-- A physical zone always has priority over
+	-- the background reconciliation cycle.
+	self.priorityLocation = location;
+	self.prioritySyncPending = true;
+
+	if self.syncRequest
+		and self.syncRequest.type == "cycle" then
+
+		self.cyclePaused = true;
+	end
+
+	self:ScheduleZoneSync();
 end
 
 function GHU_Stash:PublishStash(stash, target)
@@ -530,6 +600,24 @@ function GHU_Stash:CreateBagFrame()
 	self.bagFrame = frame;
 end
 
+function GHU_Stash:TombstoneStash(stash)
+	if not stash or not stash.id then
+		return false;
+	end
+
+	-- Make destruction a new version of the stash.
+	self:TouchStash(stash);
+
+	stash.deleted = true;
+
+	-- The tombstone keeps identity, creator, location,
+	-- version information, etc., but no longer needs
+	-- the item contents.
+	stash.items = nil;
+
+	return true;
+end
+
 function GHU_Stash:TouchStash(stash)
 	if not stash then
 		return;
@@ -571,6 +659,17 @@ function GHU_Stash:GetNameChecksum(name)
 	return checksum;
 end
 
+function GHU_Stash:GetNextSyncRequestID()
+	self.syncRequestSerial =
+		(tonumber(self.syncRequestSerial) or 0) + 1;
+
+	return self:GetPlayerName()
+		.. "-"
+		.. tostring(time())
+		.. "-"
+		.. tostring(self.syncRequestSerial);
+end
+
 function GHU_Stash:OpenGHIBackpack()
 	if GHIContainerFrame1
 		and not GHIContainerFrame1:IsShown() then
@@ -579,8 +678,54 @@ function GHU_Stash:OpenGHIBackpack()
 	end
 end
 
+function GHU_Stash:HandleAcceptedStash(stash)
+	if not stash then
+		return;
+	end
+
+	if stash.deleted then
+		stash.items = nil;
+	end
+
+	if self.currentStash
+		and self.currentStash.id == stash.id then
+
+		if stash.deleted then
+			if self.bagFrame
+				and self.bagFrame:IsShown() then
+
+				self:CloseBag();
+			end
+
+			self.currentStash = nil;
+
+			self:AddMessage(
+				"The hidden stash has been destroyed."
+			);
+
+			return;
+		end
+
+		self.currentStash = stash;
+
+		if self.bagFrame
+			and self.bagFrame:IsShown() then
+
+			self:BindGHIContainer(stash);
+			self:UpdateBag();
+		end
+	end
+end
+
 function GHU_Stash:OpenBag(stash)
 	if not stash then
+		return;
+	end
+
+	if stash.deleted then
+		self:AddMessage(
+			"The stash no longer exists."
+		);
 		return;
 	end
 
@@ -858,6 +1003,180 @@ function GHU_Stash:GetCurrentLocation()
 	};
 end
 
+function GHU_Stash:BuildZoneManifest(continent, zone)
+	local manifest = {};
+	local stashes =
+		self:GetZoneStashes(continent, zone);
+
+	local stashID;
+	local stash;
+
+	for stashID, stash in pairs(stashes) do
+		manifest[stashID] = {
+			updated = tonumber(stash.updated) or 0,
+			updateSerial =
+				tonumber(stash.updateSerial) or 0,
+			lastEditor = stash.lastEditor or "",
+			deleted = stash.deleted,
+		};
+	end
+
+	return manifest;
+end
+
+function GHU_Stash:BuildZoneCycle()
+	self.cycleZones = {};
+
+	local continents = {
+		GetMapContinents()
+	};
+
+	local continent;
+	local zones;
+	local zone;
+
+	for continent = 1, table.getn(continents) do
+		zones = {
+			GetMapZones(continent)
+		};
+
+		for zone = 1, table.getn(zones) do
+			table.insert(
+				self.cycleZones,
+				{
+					continent = continent,
+					zone = zone,
+					zoneName = zones[zone],
+				}
+			);
+		end
+	end
+end
+
+function GHU_Stash:StartZoneCycle()
+	if table.getn(self.cycleZones) == 0 then
+		self:BuildZoneCycle();
+	end
+
+	self.cycleActive = true;
+	self.cyclePaused = false;
+	self.cycleIndex = 1;
+
+	self:ContinueZoneCycle();
+end
+
+function GHU_Stash:ContinueZoneCycle()
+	if not self.cycleActive
+		or self.cyclePaused
+		or self.prioritySyncPending
+		or self.syncRequest then
+
+		return;
+	end
+
+	local zone =
+		self.cycleZones[self.cycleIndex];
+
+	if not zone then
+		self.cycleIndex = 1;
+		zone = self.cycleZones[1];
+	end
+
+	if not zone then
+		return;
+	end
+
+	self:BeginZoneReconciliation(
+		zone.continent,
+		zone.zone,
+		"cycle"
+	);
+end
+
+function GHU_Stash:FinishZoneReconciliation()
+	local syncType = nil;
+
+	if self.syncRequest then
+		syncType = self.syncRequest.type;
+	end
+
+	self.syncRequest = nil;
+
+	if self.prioritySyncPending then
+		self:ScheduleZoneSync();
+		return;
+	end
+
+	if syncType == "priority" then
+		if not self.cycleActive then
+			self:StartZoneCycle();
+		else
+			self.cyclePaused = false;
+			self:ContinueZoneCycle();
+		end
+
+		return;
+	end
+
+	if syncType == "cycle" then
+		self.cycleIndex = self.cycleIndex + 1;
+
+		if self.cycleIndex >
+			table.getn(self.cycleZones) then
+
+			self.cycleIndex = 1;
+		end
+
+		self:ContinueZoneCycle();
+	end
+end
+
+function GHU_Stash:BeginZoneReconciliation(
+	continent,
+	zone,
+	syncType
+)
+	local requestID = self:GetNextSyncRequestID();
+
+	self.syncRequest = {
+		id = requestID,
+		type = syncType,
+		continent = continent,
+		zone = zone,
+
+		-- Best versions reported by everybody.
+		best = {},
+
+		-- Which players possess each best version.
+		holders = {},
+
+		started = GetTime(),
+	};
+
+	self:BroadcastManifestRequest(
+		requestID,
+		continent,
+		zone
+	);
+end
+
+function GHU_Stash:SynchronizeCurrentZone()
+	if not self.prioritySyncPending
+		or not self.priorityLocation then
+		return;
+	end
+
+	local location = self.priorityLocation;
+
+	self.prioritySyncPending = false;
+
+	self:BeginZoneReconciliation(
+		location.continent,
+		location.zone,
+		"priority"
+	);
+end
+
 function GHU_Stash:CloseBag()
 	self:UnbindGHIContainer();
 
@@ -943,6 +1262,7 @@ function GHU_Stash:FindNearbyStashes(currentLocation)
 
 		for stashID, stash in pairs(source or {}) do
 			if not seen[stashID]
+				and not stash.deleted
 				and stash.location
 				and stash.location.continent == currentLocation.continent
 				and stash.location.zone == currentLocation.zone then
@@ -1028,7 +1348,7 @@ function GHU_Stash:CreateStash()
 
 	    created = timestamp,
 	    updated = timestamp,
-	    updateSerial = self:GetNextUpdateSerial(timestamp),
+	    updateSerial = 0,
 	    lastEditor = playerName,
 
 	    location = {
@@ -1060,30 +1380,58 @@ function GHU_Stash:DestroyStash()
 	local stash = self.currentStash;
 
 	if not stash then
-		self:AddMessage("You have not discovered a stash to destroy.");
+		self:AddMessage(
+			"You have not discovered a stash to destroy."
+		);
 		return;
 	end
 
-	if not self:IsAtLocation(stash) then
-		self:AddMessage("You are not close enough to the stash.");
-		return;
-	end
-
-	if not stash.id or not self.stashes[stash.id] then
-		self:AddMessage("The stash no longer exists.");
+	if stash.deleted then
+		self:AddMessage(
+			"The stash no longer exists."
+		);
 		self.currentStash = nil;
 		return;
 	end
 
-	self.stashes[stash.id] = nil;
+	if not self:IsAtLocation(stash) then
+		self:AddMessage(
+			"You are not close enough to the stash."
+		);
+		return;
+	end
 
-    if self.bagFrame and self.bagFrame:IsShown() then
-	    self:CloseBag();
-    end
+	-- For now, preserve the existing rule that the stash
+	-- must belong to our original-stash collection.
+	if not stash.id or not self.stashes[stash.id] then
+		self:AddMessage(
+			"The stash no longer exists."
+		);
+		self.currentStash = nil;
+		return;
+	end
+
+	-- Close first so an item cannot remain attached
+	-- to the cursor/container while the contents vanish.
+	if self.bagFrame
+		and self.bagFrame:IsShown() then
+
+		self:CloseBag();
+	end
+
+	self:TombstoneStash(stash);
+
+	-- IMPORTANT:
+	-- Do NOT remove self.stashes[stash.id].
+	-- The tombstone must remain permanently available
+	-- for synchronization.
+	self:PublishStash(stash);
 
 	self.currentStash = nil;
 
-	self:AddMessage("You destroy the hidden stash.");
+	self:AddMessage(
+		"You destroy the hidden stash."
+	);
 end
 
 function GHU_Stash:HookGHI()
@@ -1148,6 +1496,7 @@ function GHU_Stash:HookGHI()
 	end
 end
 
+
 function GHU_Stash:Search()
 	local location = self:GetCurrentLocation();
 
@@ -1172,25 +1521,25 @@ function GHU_Stash:Search()
 	self:AddMessage("You find no signs of a hidden stash.");
 end
 
-GHU_Stash:RegisterEvent("VARIABLES_LOADED");
-GHU_Stash:RegisterEvent("PLAYER_LOGOUT");
-GHU_Stash:RegisterEvent("PLAYER_ENTERING_WORLD");
-GHU_Stash:RegisterEvent("ZONE_CHANGED_NEW_AREA");
-
 GHU_Stash:SetScript("OnEvent", function()
 	if event == "VARIABLES_LOADED" then
 		GHU_Stash:Init();
 
 	elseif event == "PLAYER_ENTERING_WORLD" then
-		GHU_Stash:ScheduleZoneSync();
+		GHU_Stash:EnterCurrentZone();
 
 	elseif event == "ZONE_CHANGED_NEW_AREA" then
-		GHU_Stash:ScheduleZoneSync();
+		GHU_Stash:EnterCurrentZone();
 
 	elseif event == "PLAYER_LOGOUT" then
 		GHU_Stash:UnbindGHIContainer();
 	end
 end);
+
+GHU_Stash:SetScript("OnUpdate", function()
+	GHU_Stash:Update(arg1);
+end);
+
 
 SLASH_GHUSTASH1 = "/stash";
 
@@ -1218,22 +1567,4 @@ SlashCmdList["GHUSTASH"] = function(msg)
 	end
 end
 
-function GHU_Stash:ScheduleZoneSync()
-	self.zoneSyncPending = true;
-	self.zoneSyncElapsed = 0;
-end
-
-
-function GHU_Stash:Update(elapsed)
-	if self.zoneSyncPending then
-		self.zoneSyncElapsed =
-			self.zoneSyncElapsed + elapsed;
-
-		if self.zoneSyncElapsed >= self.zoneSyncDelay then
-			self.zoneSyncPending = false;
-			self.zoneSyncElapsed = 0;
-
-			self:SynchronizeCurrentZone();
-		end
-	end
-end
+GHU_Stash:OnLoad();
