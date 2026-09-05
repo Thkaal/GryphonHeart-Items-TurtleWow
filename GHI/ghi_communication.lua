@@ -43,7 +43,7 @@ end
 -- whisper transport on Turtle/Vanilla and hides the transport text in the
 -- GHI chat handler.  The payload is hex encoded because SendChatMessage is
 -- not binary safe.
-local GHI5_WHISPER_MARK = "!GHI5!";
+local GHI5_WHISPER_MARK = "GHI5!";
 
 local function ghi5_hex_encode(text)
     local out = {};
