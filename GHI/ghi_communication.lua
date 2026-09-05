@@ -84,10 +84,20 @@ function GHI:SerializeWireValue(value)
 end
 
 function GHI:DeserializeWireValue(text)
+	if type(text) ~= "string" then
+		return nil;
+	end
+
 	local value;
 	local position;
 
 	value, position = ghi5_des(text, 1);
+
+	if not position
+		or position ~= string.len(text) + 1 then
+
+		return nil;
+	end
 
 	return value;
 end

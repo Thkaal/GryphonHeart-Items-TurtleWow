@@ -335,9 +335,6 @@ function GHI_Stash:SendTransport(
 	messageType,
 	payload
 )
-	if not self.serializer then
-		return false;
-	end
 
 	local packet = {
 		type = messageType,
