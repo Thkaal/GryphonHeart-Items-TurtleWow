@@ -212,7 +212,7 @@ local function ghi5_receive_wire(text,distribution,sender)
 
     local args=ghi5_des(all,1);
     if type(args)=="table" and GHI.ReceiveMessage then
-        GHI:ReceiveMessage("GHI",sender,distribution,false,unpack(args));
+        GHI:ReceiveMessage("GHI",sender,distribution,unpack(args));
     end
 end
 
