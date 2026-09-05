@@ -11,28 +11,50 @@ function GHI_TradeHookings()
 		eventFrame:RegisterEvent("TRADE_CLOSED");
 		eventFrame:RegisterEvent("TRADE_ACCEPT_UPDATE");
 
-        if not GHI_TradeEventDebugHooked then
-            local oldOnEvent = eventFrame:GetScript("OnEvent");
+    if not GHI_TradeEventHooked then
+        local oldOnEvent = eventFrame:GetScript("OnEvent");
 
-            eventFrame:SetScript("OnEvent", function()
-                if event == "TRADE_ACCEPT_UPDATE" then
-                    GHI_Message(
-                        "DEBUG TRADE_ACCEPT_UPDATE: "
-                        .. tostring(arg1)
-                        .. ", "
-                        .. tostring(arg2)
-                    );
-                elseif event == "TRADE_CLOSED" then
-                    GHI_Message("DEBUG TRADE_CLOSED");
+        eventFrame:SetScript("OnEvent", function()
+
+            if event == "TRADE_ACCEPT_UPDATE" then
+
+                GHI_TradeFrame_PlayerAcceptState = tonumber(arg1) or 0;
+                GHI_TradeFrame_RecipientAcceptState = tonumber(arg2) or 0;
+
+            elseif event == "TRADE_CLOSED" then
+
+                -- TRADE_CLOSED may fire more than once.
+                if not GHI_TradeFinalized then
+
+                    if GHI_TradeFrame_PlayerAcceptState == 1
+                    and GHI_TradeFrame_RecipientAcceptState == 1 then
+
+                        GHI_TradeFinalized = true;
+                        GHI_AcceptTrade();
+
+                    else
+                        -- Trade was cancelled/closed without both accepting.
+                        -- The virtual items were never removed, so only unlock them.
+                        GHI_TradeItemsPlayer = {};
+                        GHI_TradeItemsRecipient = {};
+                        GHI_TradeLinksSend = {};
+
+                        GHI_ClearLocked();
+                        GHI_UpdateContainers();
+
+                        GHI_TradeFrame_PlayerAcceptState = 0;
+                        GHI_TradeFrame_RecipientAcceptState = 0;
+                    end
                 end
+            end
 
-                if oldOnEvent then
-                    oldOnEvent();
-                end
-            end);
+            if oldOnEvent then
+                oldOnEvent();
+            end
+        end);
 
-            GHI_TradeEventDebugHooked = true;
-        end
+        GHI_TradeEventHooked = true;
+    end
 
 	end
 
@@ -117,13 +139,18 @@ end
 
 	if TradeFrame then
 		local oldShow = TradeFrame:GetScript("OnShow");
-		TradeFrame:SetScript("OnShow", function()
-			GHI_TradeItemsPlayer = {};
-			GHI_TradeItemsRecipient = {};
-			GHI_TradeLinksSend = {};
-			GHI_RecipientHasGHI = false;
-			if oldShow then oldShow(); end
-		end);
+        TradeFrame:SetScript("OnShow", function()
+            GHI_TradeItemsPlayer = {};
+            GHI_TradeItemsRecipient = {};
+            GHI_TradeLinksSend = {};
+            GHI_RecipientHasGHI = false;
+
+            GHI_TradeFrame_PlayerAcceptState = 0;
+            GHI_TradeFrame_RecipientAcceptState = 0;
+            GHI_TradeFinalized = false;
+
+            if oldShow then oldShow(); end
+        end);
 	end
 end
 
@@ -222,7 +249,11 @@ function GHI_ClickTradeButton(slot)
 			
 			--if not(cursorItem) then
 			GHI_ClearTradeButton(slot);
-			local player = TradeFrameRecipientNameText:GetText();
+            local player = GHI_TradePlayer;
+
+            if not player or player == "" then
+                player = TradeFrameRecipientNameText:GetText();
+            end
 			GHI_SendData("Trade<"..slot.."",0,player);  -- removes the GHI item for reciepient.
 			--end
 		end
