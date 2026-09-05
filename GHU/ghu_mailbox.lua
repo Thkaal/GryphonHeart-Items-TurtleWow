@@ -7,8 +7,25 @@ GHU_Mail.pendingReceives = {};
 GHU_Mail.sending = nil;
 
 local GHU_MAIL_SUBJECT_PREFIX = "GHI#";
-local GHU_MAIL_BODY_PREFIX = "GHIM1#";
-local GHU_MAIL_CHUNK_SIZE = 460; -- Vanilla SendMail body editbox is limited to 500 chars.
+
+-- GHIM1 = legacy raw transport.
+-- GHIM2 = legacy escaped transport.
+-- GHIM3 = current hexadecimal mail-safe transport.
+local GHU_MAIL_BODY_PREFIX_V1 = "GHIM1#";
+local GHU_MAIL_BODY_PREFIX_V2 = "GHIM2#";
+local GHU_MAIL_BODY_PREFIX_V3 = "GHIM3#";
+local GHU_MAIL_BODY_PREFIX = GHU_MAIL_BODY_PREFIX_V3;
+
+-- Keep each body below Vanilla/TurtleWoW's 500-character mail-body limit.
+local GHU_MAIL_CHUNK_SIZE = 460;
+
+-- Legacy GHIM2 decoder. New outgoing mail uses GHIM3.
+local function GHU_MailDecode(text)
+	if type(text) ~= "string" then return ""; end
+	text = string.gsub(text,"~1","|");
+	text = string.gsub(text,"~0","~");
+	return text;
+end
 
 local function GHU_MailMessage(msg)
 	if type(GHI_Message) == "function" then
@@ -16,6 +33,46 @@ local function GHU_MailMessage(msg)
 	elseif DEFAULT_CHAT_FRAME then
 		DEFAULT_CHAT_FRAME:AddMessage(msg);
 	end
+end
+
+local function GHU_MailHexEncode(text)
+	if type(text) ~= "string" then return ""; end
+
+	local out = {};
+	local i;
+
+	for i = 1,string.len(text) do
+		out[i] = string.format("%02X",string.byte(text,i));
+	end
+
+	return table.concat(out,"");
+end
+
+
+local function GHU_MailHexDecode(text)
+	if type(text) ~= "string" then return nil; end
+
+	-- Hex must always contain two characters per original byte.
+	if math.mod(string.len(text),2) ~= 0 then
+		return nil;
+	end
+
+	local out = {};
+	local n = 0;
+	local i;
+
+	for i = 1,string.len(text),2 do
+		local byte = tonumber(string.sub(text,i,i+1),16);
+
+		if not byte then
+			return nil;
+		end
+
+		n = n + 1;
+		out[n] = string.char(byte);
+	end
+
+	return table.concat(out,"");
 end
 
 local function GHU_ParseMailSubject(subject)
@@ -302,31 +359,96 @@ function GHU_Mail:AssembleTransfer(index)
 		end
 	end
 
-	local chunks = {};
-	for i=1,meta.total do
-		local realIndex = indices[i];
+    local chunks = {};
+    local transportVersion = nil;
 
-		-- A multipart GHI message can appear in the inbox before every
-		-- part has been populated. Never call GetInboxText() with a
-		-- missing inbox index.
-		if not realIndex then
-			return nil,"Loading GHI mail data...";
-		end
+    for i=1,meta.total do
+	    local realIndex = indices[i];
 
-		local body = self.orig.GetInboxText(realIndex);
-		if type(body) ~= "string" or body == "" then
-			return nil,"Loading GHI mail data...";
-		end
+	    -- A multipart GHI message can appear in the inbox before every
+	    -- part has been populated.
+	    if not realIndex then
+		    return nil,"Loading GHI mail data...";
+	    end
 
-		local bodyPrefix = GHU_MAIL_BODY_PREFIX..meta.id.."#"..i.."#"..meta.total.."#";
-		if string.sub(body,1,string.len(bodyPrefix)) ~= bodyPrefix then
-			return nil,"Loading GHI mail data...";
-		end
+	    local body = self.orig.GetInboxText(realIndex);
 
-		chunks[i] = string.sub(body,string.len(bodyPrefix)+1);
-	end
+	    if type(body) ~= "string" or body == "" then
+		    return nil,"Loading GHI mail data...";
+	    end
 
-	local payload = table.concat(chunks,"");
+
+	    -- Accept legacy GHIM1/GHIM2 mail and current GHIM3 mail.
+	    local prefixV2 =
+		    GHU_MAIL_BODY_PREFIX_V2..
+		    meta.id.."#"..
+		    i.."#"..
+		    meta.total.."#";
+
+	    local prefixV1 =
+		    GHU_MAIL_BODY_PREFIX_V1..
+		    meta.id.."#"..
+		    i.."#"..
+		    meta.total.."#";
+
+        local prefixV3 =
+	        GHU_MAIL_BODY_PREFIX_V3..
+	        meta.id.."#"..
+	        i.."#"..
+	        meta.total.."#";
+
+
+	    local bodyPrefix = nil;
+	    local thisVersion = nil;
+
+        if string.sub(body,1,string.len(prefixV3)) == prefixV3 then
+	        bodyPrefix = prefixV3;
+	        thisVersion = 3;
+
+        elseif string.sub(body,1,string.len(prefixV2)) == prefixV2 then
+	        bodyPrefix = prefixV2;
+	        thisVersion = 2;
+
+        elseif string.sub(body,1,string.len(prefixV1)) == prefixV1 then
+	        bodyPrefix = prefixV1;
+	        thisVersion = 1;
+
+        else
+	        return nil,"Loading GHI mail data...";
+        end
+
+
+	    -- Every part of one transfer must use the same transport format.
+	    if transportVersion == nil then
+		    transportVersion = thisVersion;
+
+	    elseif transportVersion ~= thisVersion then
+		    return nil,"GHI mail transfer contains mixed transport versions.";
+	    end
+
+
+	    chunks[i] = string.sub(
+		    body,
+		    string.len(bodyPrefix)+1
+	    );
+    end
+
+
+    -- First reconstruct exactly what was transported.
+    local payload = table.concat(chunks,"");
+
+
+    -- Decode the transport format before parsing userBody/code.
+    if transportVersion == 3 then
+	    payload = GHU_MailHexDecode(payload);
+
+	    if not payload then
+		    return nil,"GHI mail hex data is corrupt.";
+	    end
+
+    elseif transportVersion == 2 then
+	    payload = GHU_MailDecode(payload);
+    end
 	local colon = string.find(payload,":",1,true);
 	if not colon then return nil,"GHI mail payload is corrupt."; end
 	local bodyLen = tonumber(string.sub(payload,1,colon-1));
@@ -416,7 +538,7 @@ function GHU_Mail:GetInboxHeaderInfo(index)
 				hasItem = nil;
 			end
 		else
-			subject = "GHI item data ("..meta.part.."\/"..meta.total..")";
+			subject = "GHI item data ("..meta.part.."/"..meta.total..")";
 			hasItem = nil;
 			packageIcon = nil;
 		end
@@ -430,10 +552,13 @@ function GHU_Mail:GetInboxNumItems()
 end
 
 function GHU_Mail:GetInboxText(index)
-	self = gself or self;
+    self = gself or self;
+
+    local nativeBody, nativeStationery = self.orig.GetInboxText(index);
+
 	local meta = self:GetTransferMeta(index);
 	if meta then
-		local _,stationery = self.orig.GetInboxText(index);
+		local stationery = nativeStationery;
 		if meta.part == 1 then
 			local data,err = self:AssembleTransfer(index);
 			if data then
@@ -444,7 +569,7 @@ function GHU_Mail:GetInboxText(index)
 		end
 		return "This message contains part "..meta.part.." of "..meta.total.." of a Gryphonheart Item attachment. Keep it until the attachment in the first message has been claimed.",stationery;
 	end
-	return self.orig.GetInboxText(index);
+	return nativeBody,nativeStationery;
 end
 
 function GHU_Mail:GetLatestThreeSenders()
@@ -619,11 +744,11 @@ end
 function GHU_Mail:SendNextPart()
 	local s = self.sending;
 	if not s then return; end
+
 	local part = s.part;
 	local subject = self:MakeTransportSubject(s.mailID,part,s.total,s.subject);
 	local bodyPrefix = GHU_MAIL_BODY_PREFIX..s.mailID.."#"..part.."#"..s.total.."#";
 	local body = bodyPrefix..s.parts[part];
-
 
 	SendMail(s.to,subject,body);
 end
@@ -653,11 +778,19 @@ function GHU_Mail:BeginGHIItemSend()
 	end
 
 	local code,err = GHI_TransferExportItem(p.ID,p.amount);
+
 	if not code then
 		GHU_MailMessage(err or "Could not prepare GHI item for mail.");
 		return true;
 	end
-	local payload = string.len(userBody)..":"..userBody..code;
+
+    -- Construct the normal GHI payload first.
+    local rawPayload = string.len(userBody)..":"..userBody..code;
+
+    -- Encode the complete payload as hexadecimal before chunking.
+    -- GHIM3 therefore transports only characters 0-9 and A-F.
+    local payload = GHU_MailHexEncode(rawPayload);
+
 	local total = math.ceil(string.len(payload) / GHU_MAIL_CHUNK_SIZE);
 	if total < 1 then total = 1; end
 	if total > 50 then
@@ -679,11 +812,11 @@ function GHU_Mail:BeginGHIItemSend()
 		local a = ((i-1)*GHU_MAIL_CHUNK_SIZE)+1;
 		parts[i] = string.sub(payload,a,a+GHU_MAIL_CHUNK_SIZE-1);
 	end
-	self.sending = {
-		to=to, subject=subject, mailID=mailID, parts=parts, total=total, part=1,
-		codeLength=string.len(code), payloadLength=string.len(payload),
-		bag=p.bag, slot=p.slot, frame=p.frame, amount=p.amount, ID=p.ID, name=p.name,
-	};
+
+    self.sending = {
+        to=to, subject=subject, mailID=mailID, parts=parts, total=total, part=1,
+        bag=p.bag, slot=p.slot, frame=p.frame, amount=p.amount, ID=p.ID, name=p.name,
+    };
 	GHU_MailMessage("Sending "..p.name.." by GHI mail ("..total.." part"..((total==1) and "" or "s")..").");
 	self:SendNextPart();
 	return true;
@@ -701,7 +834,11 @@ end
 function GHU_Mail:MailSendSucceeded()
 	local s = self.sending;
 	if not s then return; end
+
 	if s.part < s.total then
+		-- The current part succeeded. Give the next part its own retry allowance.
+		s.retry = 0;
+
 		s.part = s.part + 1;
 
 		if self.multipartSendFrame then
@@ -711,31 +848,44 @@ function GHU_Mail:MailSendSucceeded()
 		local obj = self;
 		local expectedSending = s;
 		local elapsed = 0;
+
 		self.multipartSendFrame = CreateFrame("Frame");
 		self.multipartSendFrame:SetScript("OnUpdate",function()
 			elapsed = elapsed + (arg1 or 0);
+
 			if elapsed >= 2 then
 				self.multipartSendFrame:SetScript("OnUpdate",nil);
 				self.multipartSendFrame = nil;
+
 				if obj.sending == expectedSending then
 					obj:SendNextPart();
 				end
 			end
 		end);
+
 		return;
 	end
-	-- All server-mail chunks are safely accepted. Consume the sender's virtual
-	-- item only now, matching the success semantics of GHI trade.
-	if type(GHI_ContainerData)=="table" and type(GHI_ContainerData[s.bag])=="table" and type(GHI_ContainerData[s.bag][s.slot])=="table" then
+
+	-- All server-mail chunks are safely accepted.
+	if type(GHI_ContainerData)=="table"
+		and type(GHI_ContainerData[s.bag])=="table"
+		and type(GHI_ContainerData[s.bag][s.slot])=="table" then
+
 		GHI_ContainerData[s.bag][s.slot].locked = nil;
 	end
+
 	if type(GHI_DeleteItem)=="function" then
 		GHI_DeleteItem(s.frame,s.amount,s.bag,s.slot);
 	end
+
 	self.sending = nil;
 	self.pendingAttachment = nil;
+
 	GHU_MailMessage("GHI item mailed successfully.");
-	if type(SendMailFrame_Update)=="function" then SendMailFrame_Update(); end
+
+	if type(SendMailFrame_Update)=="function" then
+		SendMailFrame_Update();
+	end
 end
 
 function GHU_Mail:MailSendFailed()
