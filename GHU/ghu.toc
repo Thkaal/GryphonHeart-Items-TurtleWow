@@ -2,6 +2,7 @@
 ## Title: Gryphonheart UI
 ## Version: 0.3
 ## Notes: Hooking of the Blizzard frames for other addons
+## Dependencies: GHI
 ## SavedVariablesPerCharacter: GHU_MiscData
 ## SavedVariables: GHU_StashData
 
