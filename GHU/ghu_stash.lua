@@ -1528,8 +1528,9 @@ GHU_Stash:SetScript("OnEvent", function()
 	elseif event == "PLAYER_ENTERING_WORLD" then
 		GHU_Stash:EnterCurrentZone();
 
-	elseif event == "ZONE_CHANGED_NEW_AREA" then
-		GHU_Stash:EnterCurrentZone();
+    elseif event == "PLAYER_ENTERING_WORLD" then
+	    GHU_Stash:JoinStashChannel();
+	    GHU_Stash:EnterCurrentZone();
 
 	elseif event == "PLAYER_LOGOUT" then
 		GHU_Stash:UnbindGHIContainer();
