@@ -576,29 +576,42 @@ function GHI_Stash:ReceivePublishedStash(sender, stash)
 	-- a newer remote copy may represent changes made while
 	-- we were offline.
 	--
-    if self.stashes[stash.id] then
-	    if self:IsNewerStash(
-		    stash,
-		    self.stashes[stash.id]
-	    ) then
+	if self.stashes[stash.id] then
+		if self:IsNewerStash(
+			stash,
+			self.stashes[stash.id]
+		) then
 
-		    self.stashes[stash.id] = stash;
-		    self:HandleAcceptedStash(stash);
-	    end
+			self.stashes[stash.id] = stash;
+			self:HandleAcceptedStash(stash);
+		end
 
-	    return;
-    end
+		self:ResolvePendingStashRequest(
+			self:GetBestStash(stash.id)
+		);
 
-	    local old = self.replicaStashes[stash.id];
+		return;
+	end
 
-	    if not old
-		    or self:IsNewerStash(stash, old) then
+	local old =
+		self.replicaStashes[stash.id];
 
-		    self.replicaStashes[stash.id] = stash;
-		    self:HandleAcceptedStash(stash);
-	    end
-    end
+	if not old
+		or self:IsNewerStash(
+			stash,
+			old
+		) then
 
+		self.replicaStashes[stash.id] =
+			stash;
+
+		self:HandleAcceptedStash(stash);
+	end
+
+	self:ResolvePendingStashRequest(
+		self:GetBestStash(stash.id)
+	);
+end
 function GHI_Stash:ScheduleZoneSync()
 	self.zoneSyncPending = true;
 	self.zoneSyncElapsed = 0;
@@ -609,6 +622,11 @@ function GHI_Stash:Update(elapsed)
 	self:ProcessTransportQueue(elapsed);
 	self:CleanupTransportIncoming();
 
+	--
+	-- Physical-zone reconciliation has priority.
+	-- If a background cycle is running,
+	-- SynchronizeCurrentZone() will replace it.
+	--
 	if self.zoneSyncPending then
 		self.zoneSyncElapsed =
 			self.zoneSyncElapsed + elapsed;
@@ -619,9 +637,327 @@ function GHI_Stash:Update(elapsed)
 			self.zoneSyncPending = false;
 			self.zoneSyncElapsed = 0;
 
-			-- Leave synchronization disabled until
-			-- the basic channel transport is proven.
-			-- self:SynchronizeCurrentZone();
+			self:SynchronizeCurrentZone();
+		end
+	end
+
+	--
+	-- Advance the currently active reconciliation.
+	--
+	self:UpdateReconciliation();
+end
+
+function GHI_Stash:GetPendingStashRequestCount()
+	local count = 0;
+	local stashID;
+	local request;
+
+	for stashID, request
+		in pairs(self.pendingStashRequests or {}) do
+
+		if request then
+			count = count + 1;
+		end
+	end
+
+	return count;
+end
+
+
+function GHI_Stash:GetSortedRemoteHolders(holders)
+	local result = {};
+	local ownName =
+		string.lower(
+			self:GetPlayerName() or ""
+		);
+
+	local i;
+	local holder;
+
+	for i = 1, table.getn(holders or {}) do
+		holder = holders[i];
+
+		if holder
+			and holder ~= ""
+			and string.lower(holder)
+				~= ownName then
+
+			table.insert(
+				result,
+				holder
+			);
+		end
+	end
+
+	table.sort(
+		result,
+		function(a, b)
+			return string.lower(a)
+				< string.lower(b);
+		end
+	);
+
+	return result;
+end
+
+
+function GHI_Stash:SendNextStashRequest(
+	stashID,
+	request
+)
+	if not stashID
+		or not request then
+
+		return false;
+	end
+
+	request.holderIndex =
+		(tonumber(request.holderIndex) or 0)
+		+ 1;
+
+	while request.holderIndex
+		<= table.getn(request.holders or {}) do
+
+		local source =
+			request.holders[
+				request.holderIndex
+			];
+
+		if source and source ~= "" then
+			request.source = source;
+			request.requestedAt = GetTime();
+
+			self.pendingStashRequests[
+				stashID
+			] = request;
+
+			self:RequestStashData(
+				stashID,
+				request.version,
+				source
+			);
+
+			return true;
+		end
+
+		request.holderIndex =
+			request.holderIndex + 1;
+	end
+
+	self.pendingStashRequests[
+		stashID
+	] = nil;
+
+	return false;
+end
+
+
+function GHI_Stash:FinalizeManifestCollection()
+	if not self.syncRequest
+		or self.syncRequest.phase
+			~= "manifest" then
+
+		return;
+	end
+
+	self.syncRequest.phase = "fetch";
+
+	local stashIDs = {};
+	local stashID;
+
+	for stashID
+		in pairs(self.syncRequest.best) do
+
+		table.insert(
+			stashIDs,
+			stashID
+		);
+	end
+
+	table.sort(stashIDs);
+
+	local i;
+	local bestVersion;
+	local localStash;
+	local holders;
+	local request;
+
+	for i = 1, table.getn(stashIDs) do
+		stashID = stashIDs[i];
+
+		bestVersion =
+			self.syncRequest.best[
+				stashID
+			];
+
+		localStash =
+			self:GetBestStash(
+				stashID
+			);
+
+		--
+		-- Only request full data if we do not have
+		-- this version already.
+		--
+		if not localStash
+			or self:IsNewerStash(
+				bestVersion,
+				localStash
+			) then
+
+			holders =
+				self:GetSortedRemoteHolders(
+					self.syncRequest.holders[
+						stashID
+					]
+				);
+
+			if table.getn(holders) > 0 then
+				request = {
+					version = bestVersion,
+					holders = holders,
+					holderIndex = 0,
+				};
+
+				self:SendNextStashRequest(
+					stashID,
+					request
+				);
+			end
+		end
+	end
+
+	--
+	-- Nothing needed repairing.
+	--
+	if self:GetPendingStashRequestCount()
+		== 0 then
+
+		self:FinishZoneReconciliation();
+	end
+end
+
+
+function GHI_Stash:UpdatePendingStashRequests()
+	if not self.syncRequest
+		or self.syncRequest.phase ~= "fetch" then
+
+		return;
+	end
+
+	local now = GetTime();
+	local timedOut = {};
+
+	local stashID;
+	local request;
+
+	for stashID, request
+		in pairs(self.pendingStashRequests) do
+
+		if request
+			and request.requestedAt
+			and now - request.requestedAt
+				>= self.stashRequestTimeout then
+
+			table.insert(
+				timedOut,
+				stashID
+			);
+		end
+	end
+
+	local i;
+
+	for i = 1, table.getn(timedOut) do
+		stashID = timedOut[i];
+
+		request =
+			self.pendingStashRequests[
+				stashID
+			];
+
+		if request then
+			--
+			-- The chosen holder did not answer.
+			-- Try the next holder of the same
+			-- winning version.
+			--
+			self:SendNextStashRequest(
+				stashID,
+				request
+			);
+		end
+	end
+
+	if self:GetPendingStashRequestCount()
+		== 0 then
+
+		self:FinishZoneReconciliation();
+	end
+end
+
+
+function GHI_Stash:UpdateReconciliation()
+	if not self.syncRequest then
+		return;
+	end
+
+	if self.syncRequest.phase
+		== "manifest" then
+
+		if GetTime()
+			- self.syncRequest.started
+			>= self.manifestWait then
+
+			self:FinalizeManifestCollection();
+		end
+
+	elseif self.syncRequest.phase
+		== "fetch" then
+
+		self:UpdatePendingStashRequests();
+	end
+end
+
+
+function GHI_Stash:ResolvePendingStashRequest(
+	stash
+)
+	if not stash
+		or not stash.id then
+
+		return;
+	end
+
+	local request =
+		self.pendingStashRequests[
+			stash.id
+		];
+
+	if not request then
+		return;
+	end
+
+	if self:IsSameStashVersion(
+		stash,
+		request.version
+	)
+		or self:IsNewerStash(
+			stash,
+			request.version
+		) then
+
+		self.pendingStashRequests[
+			stash.id
+		] = nil;
+
+		if self.syncRequest
+			and self.syncRequest.phase
+				== "fetch"
+			and self:GetPendingStashRequestCount()
+				== 0 then
+
+			self:FinishZoneReconciliation();
 		end
 	end
 end
@@ -1315,6 +1651,8 @@ function GHI_Stash:ReceiveManifestReply(
 	payload
 )
 	if not self.syncRequest
+		or self.syncRequest.phase
+			~= "manifest"
 		or type(payload) ~= "table" then
 
 		return;
@@ -1751,6 +2089,7 @@ function GHI_Stash:FinishZoneReconciliation()
 		syncType = self.syncRequest.type;
 	end
 
+	self.pendingStashRequests = {};
 	self.syncRequest = nil;
 
 	if self.prioritySyncPending then
@@ -1787,7 +2126,16 @@ function GHI_Stash:BeginZoneReconciliation(
 	zone,
 	syncType
 )
-	local requestID = self:GetNextSyncRequestID();
+	local requestID =
+		self:GetNextSyncRequestID();
+
+	--
+	-- A priority reconciliation may interrupt
+	-- an old background request. Late SDAT packets
+	-- are still accepted normally, but are no longer
+	-- considered part of that old transaction.
+	--
+	self.pendingStashRequests = {};
 
 	self.syncRequest = {
 		id = requestID,
@@ -1795,14 +2143,26 @@ function GHI_Stash:BeginZoneReconciliation(
 		continent = continent,
 		zone = zone,
 
-		-- Best versions reported by everybody.
 		best = {},
-
-		-- Which players possess each best version.
 		holders = {},
 
+		phase = "manifest",
 		started = GetTime(),
 	};
+
+	--
+	-- Seed the transaction with our own versions.
+	-- We do not receive our own channel messages,
+	-- so otherwise our copies would be absent from
+	-- the manifest comparison.
+	--
+	self:MergeManifest(
+		self:GetPlayerName(),
+		self:BuildZoneManifest(
+			continent,
+			zone
+		)
+	);
 
 	self:BroadcastManifestRequest(
 		requestID,
