@@ -4,7 +4,7 @@
 ## Notes: Hooking of the Blizzard frames for other addons
 ## Dependencies: GHI
 ## SavedVariablesPerCharacter: GHU_MiscData
-## SavedVariables: GHU_StashData
+
 
 
 ghu.lua
@@ -25,6 +25,6 @@ ghu_talk.lua
 ghu_talk.xml
 ghu_buff.lua
 ghu_target.lua
-ghu_stash.lua
+
 
 ghu_test.lua
