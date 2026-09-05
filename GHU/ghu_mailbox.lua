@@ -8,15 +8,18 @@ GHU_Mail.sending = nil;
 
 local GHU_MAIL_SUBJECT_PREFIX = "GHI#";
 
--- GHIM1 = legacy raw transport.
--- GHIM2 = legacy escaped transport.
--- GHIM3 = current hexadecimal mail-safe transport.
+-- GHIM1 = original/raw transport
+-- GHIM2 = | / ~ escaped transport
+-- GHIM3 = hexadecimal transport
+-- GHIM4 = optional compression + mail-safe Base64
 local GHU_MAIL_BODY_PREFIX_V1 = "GHIM1#";
 local GHU_MAIL_BODY_PREFIX_V2 = "GHIM2#";
 local GHU_MAIL_BODY_PREFIX_V3 = "GHIM3#";
-local GHU_MAIL_BODY_PREFIX = GHU_MAIL_BODY_PREFIX_V3;
+local GHU_MAIL_BODY_PREFIX_V4 = "GHIM4#";
 
--- Keep each body below Vanilla/TurtleWoW's 500-character mail-body limit.
+-- All newly-sent mail uses GHIM4.
+local GHU_MAIL_BODY_PREFIX = GHU_MAIL_BODY_PREFIX_V4;
+
 local GHU_MAIL_CHUNK_SIZE = 460;
 
 -- Legacy GHIM2 decoder. New outgoing mail uses GHIM3.
@@ -70,6 +73,438 @@ local function GHU_MailHexDecode(text)
 
 		n = n + 1;
 		out[n] = string.char(byte);
+	end
+
+	return table.concat(out,"");
+end
+
+-- ============================================================================
+-- GHIM4 MAIL-SAFE BASE64
+--
+-- Uses URL-safe characters only:
+-- A-Z a-z 0-9 - _
+--
+-- Padding "=" is intentionally omitted.
+-- Compatible with Lua 5.0.2; no bitwise operators are required.
+-- ============================================================================
+
+local GHU_BASE64_ALPHABET =
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+
+local GHU_BASE64_DECODE = {};
+
+do
+	local i;
+	for i=1,string.len(GHU_BASE64_ALPHABET) do
+		GHU_BASE64_DECODE[string.sub(GHU_BASE64_ALPHABET,i,i)] = i - 1;
+	end
+end
+
+
+local function GHU_Base64Encode(text)
+	if type(text) ~= "string" then return ""; end
+
+	local out = {};
+	local outCount = 0;
+	local textLen = string.len(text);
+	local i = 1;
+
+	while i <= textLen do
+		local remaining = textLen - i + 1;
+
+		local b1 = string.byte(text,i) or 0;
+		local b2 = 0;
+		local b3 = 0;
+
+		if remaining >= 2 then
+			b2 = string.byte(text,i+1) or 0;
+		end
+
+		if remaining >= 3 then
+			b3 = string.byte(text,i+2) or 0;
+		end
+
+		local c1 = math.floor(b1 / 4);
+		local c2 = math.mod(b1,4) * 16 + math.floor(b2 / 16);
+		local c3 = math.mod(b2,16) * 4 + math.floor(b3 / 64);
+		local c4 = math.mod(b3,64);
+
+		outCount = outCount + 1;
+		out[outCount] = string.sub(
+			GHU_BASE64_ALPHABET,
+			c1 + 1,
+			c1 + 1
+		);
+
+		outCount = outCount + 1;
+		out[outCount] = string.sub(
+			GHU_BASE64_ALPHABET,
+			c2 + 1,
+			c2 + 1
+		);
+
+		if remaining >= 2 then
+			outCount = outCount + 1;
+			out[outCount] = string.sub(
+				GHU_BASE64_ALPHABET,
+				c3 + 1,
+				c3 + 1
+			);
+		end
+
+		if remaining >= 3 then
+			outCount = outCount + 1;
+			out[outCount] = string.sub(
+				GHU_BASE64_ALPHABET,
+				c4 + 1,
+				c4 + 1
+			);
+		end
+
+		i = i + 3;
+	end
+
+	return table.concat(out,"");
+end
+
+
+local function GHU_Base64Decode(text)
+	if type(text) ~= "string" then return nil; end
+
+	local textLen = string.len(text);
+
+	-- An unpadded Base64 string can never have length mod 4 == 1.
+	if math.mod(textLen,4) == 1 then
+		return nil;
+	end
+
+	local out = {};
+	local outCount = 0;
+	local i = 1;
+
+	while i <= textLen do
+		local remaining = textLen - i + 1;
+
+		if remaining < 2 then
+			return nil;
+		end
+
+		local a = GHU_BASE64_DECODE[string.sub(text,i,i)];
+		local b = GHU_BASE64_DECODE[string.sub(text,i+1,i+1)];
+
+		if a == nil or b == nil then
+			return nil;
+		end
+
+		local c = nil;
+		local d = nil;
+
+		if remaining >= 3 then
+			c = GHU_BASE64_DECODE[string.sub(text,i+2,i+2)];
+			if c == nil then return nil; end
+		end
+
+		if remaining >= 4 then
+			d = GHU_BASE64_DECODE[string.sub(text,i+3,i+3)];
+			if d == nil then return nil; end
+		end
+
+		local b1 = a * 4 + math.floor(b / 16);
+
+		outCount = outCount + 1;
+		out[outCount] = string.char(b1);
+
+		if c ~= nil then
+			local b2 =
+				math.mod(b,16) * 16 +
+				math.floor(c / 4);
+
+			outCount = outCount + 1;
+			out[outCount] = string.char(b2);
+		end
+
+		if d ~= nil then
+			local b3 =
+				math.mod(c,4) * 64 +
+				d;
+
+			outCount = outCount + 1;
+			out[outCount] = string.char(b3);
+		end
+
+		i = i + 4;
+	end
+
+	return table.concat(out,"");
+end
+
+-- ============================================================================
+-- GHIM4 SIMPLE LZ COMPRESSION
+--
+-- Token 0:
+--   00 <length> <literal bytes...>
+--
+-- Token 1:
+--   01 <distance high> <distance low> <length>
+--
+-- Minimum match length: 4 bytes
+-- Maximum match length: 255 bytes
+-- Maximum distance:     65535 bytes
+--
+-- The compressed result may contain arbitrary binary bytes. That is safe
+-- because GHIM4 Base64-encodes it before SendMail().
+-- ============================================================================
+
+local GHU_LZ_MIN_MATCH = 4;
+local GHU_LZ_MAX_MATCH = 255;
+local GHU_LZ_MAX_DISTANCE = 65535;
+
+
+local function GHU_LZAddDictionaryKey(dict,text,pos,textLen)
+	if pos + 2 <= textLen then
+		local key = string.sub(text,pos,pos+2);
+		dict[key] = pos;
+	end
+end
+
+
+local function GHU_LZFindMatch(text,pos,textLen,dict)
+	if pos + 2 > textLen then
+		return nil,0;
+	end
+
+	local key = string.sub(text,pos,pos+2);
+	local previous = dict[key];
+
+	if not previous then
+		return nil,0;
+	end
+
+	local distance = pos - previous;
+
+	if distance < 1 or distance > GHU_LZ_MAX_DISTANCE then
+		return nil,0;
+	end
+
+	local maxLen = textLen - pos + 1;
+
+	if maxLen > GHU_LZ_MAX_MATCH then
+		maxLen = GHU_LZ_MAX_MATCH;
+	end
+
+	local matchLen = 0;
+
+	while matchLen < maxLen do
+		local a = string.byte(text,previous + matchLen);
+		local b = string.byte(text,pos + matchLen);
+
+		if a ~= b then
+			break;
+		end
+
+		matchLen = matchLen + 1;
+	end
+
+	if matchLen < GHU_LZ_MIN_MATCH then
+		return nil,0;
+	end
+
+	return distance,matchLen;
+end
+
+
+local function GHU_Compress(text)
+	if type(text) ~= "string" then return nil; end
+
+	local textLen = string.len(text);
+
+	if textLen == 0 then
+		return "";
+	end
+
+	local dict = {};
+
+	local out = {};
+	local outCount = 0;
+
+	local literals = {};
+	local literalCount = 0;
+
+
+	local function FlushLiterals()
+		if literalCount <= 0 then return; end
+
+		outCount = outCount + 1;
+		out[outCount] = string.char(0);
+
+		outCount = outCount + 1;
+		out[outCount] = string.char(literalCount);
+
+		outCount = outCount + 1;
+		out[outCount] = table.concat(literals,"");
+
+		literals = {};
+		literalCount = 0;
+	end
+
+
+	local i = 1;
+
+	while i <= textLen do
+		local distance,matchLen =
+			GHU_LZFindMatch(text,i,textLen,dict);
+
+		if distance and matchLen >= GHU_LZ_MIN_MATCH then
+
+			FlushLiterals();
+
+			local distanceHigh = math.floor(distance / 256);
+			local distanceLow = math.mod(distance,256);
+
+			outCount = outCount + 1;
+			out[outCount] = string.char(1);
+
+			outCount = outCount + 1;
+			out[outCount] = string.char(distanceHigh);
+
+			outCount = outCount + 1;
+			out[outCount] = string.char(distanceLow);
+
+			outCount = outCount + 1;
+			out[outCount] = string.char(matchLen);
+
+
+			-- Make consumed positions available for later matches.
+			local j;
+
+			for j=0,matchLen-1 do
+				GHU_LZAddDictionaryKey(
+					dict,
+					text,
+					i+j,
+					textLen
+				);
+			end
+
+			i = i + matchLen;
+
+		else
+			literalCount = literalCount + 1;
+			literals[literalCount] = string.sub(text,i,i);
+
+			GHU_LZAddDictionaryKey(
+				dict,
+				text,
+				i,
+				textLen
+			);
+
+			i = i + 1;
+
+			if literalCount >= 255 then
+				FlushLiterals();
+			end
+		end
+	end
+
+	FlushLiterals();
+
+	return table.concat(out,"");
+end
+
+
+local function GHU_Decompress(text)
+	if type(text) ~= "string" then return nil; end
+
+	local textLen = string.len(text);
+
+	if textLen == 0 then
+		return "";
+	end
+
+	-- Individual bytes are stored separately because LZ back-references
+	-- may overlap data currently being generated.
+	local out = {};
+	local outLen = 0;
+
+	local i = 1;
+
+	while i <= textLen do
+		local token = string.byte(text,i);
+
+		if token == 0 then
+
+			local runLen = string.byte(text,i+1);
+
+			if not runLen or runLen < 1 then
+				return nil;
+			end
+
+			if i + 1 + runLen > textLen then
+				return nil;
+			end
+
+			local j;
+
+			for j=0,runLen-1 do
+				outLen = outLen + 1;
+				out[outLen] = string.sub(
+					text,
+					i+2+j,
+					i+2+j
+				);
+			end
+
+			i = i + 2 + runLen;
+
+
+		elseif token == 1 then
+
+			local distanceHigh = string.byte(text,i+1);
+			local distanceLow = string.byte(text,i+2);
+			local matchLen = string.byte(text,i+3);
+
+			if not distanceHigh
+				or not distanceLow
+				or not matchLen then
+
+				return nil;
+			end
+
+			local distance =
+				distanceHigh * 256 +
+				distanceLow;
+
+			if distance < 1
+				or distance > outLen
+				or matchLen < GHU_LZ_MIN_MATCH then
+
+				return nil;
+			end
+
+			local sourceStart =
+				outLen - distance + 1;
+
+			local j;
+
+			for j=0,matchLen-1 do
+				local ch = out[sourceStart+j];
+
+				if not ch then
+					return nil;
+				end
+
+				outLen = outLen + 1;
+				out[outLen] = ch;
+			end
+
+			i = i + 4;
+
+
+		else
+			-- Unknown token means damaged compressed data.
+			return nil;
+		end
 	end
 
 	return table.concat(out,"");
@@ -378,18 +813,12 @@ function GHU_Mail:AssembleTransfer(index)
 	    end
 
 
-	    -- Accept legacy GHIM1/GHIM2 mail and current GHIM3 mail.
-	    local prefixV2 =
-		    GHU_MAIL_BODY_PREFIX_V2..
-		    meta.id.."#"..
-		    i.."#"..
-		    meta.total.."#";
-
-	    local prefixV1 =
-		    GHU_MAIL_BODY_PREFIX_V1..
-		    meta.id.."#"..
-		    i.."#"..
-		    meta.total.."#";
+        -- Accept GHIM1/GHIM2/GHIM3 legacy mail and current GHIM4 mail.
+        local prefixV4 =
+	        GHU_MAIL_BODY_PREFIX_V4..
+	        meta.id.."#"..
+	        i.."#"..
+	        meta.total.."#";
 
         local prefixV3 =
 	        GHU_MAIL_BODY_PREFIX_V3..
@@ -397,11 +826,27 @@ function GHU_Mail:AssembleTransfer(index)
 	        i.."#"..
 	        meta.total.."#";
 
+        local prefixV2 =
+	        GHU_MAIL_BODY_PREFIX_V2..
+	        meta.id.."#"..
+	        i.."#"..
+	        meta.total.."#";
 
-	    local bodyPrefix = nil;
-	    local thisVersion = nil;
+        local prefixV1 =
+	        GHU_MAIL_BODY_PREFIX_V1..
+	        meta.id.."#"..
+	        i.."#"..
+	        meta.total.."#";
 
-        if string.sub(body,1,string.len(prefixV3)) == prefixV3 then
+
+        local bodyPrefix = nil;
+        local thisVersion = nil;
+
+        if string.sub(body,1,string.len(prefixV4)) == prefixV4 then
+	        bodyPrefix = prefixV4;
+	        thisVersion = 4;
+
+        elseif string.sub(body,1,string.len(prefixV3)) == prefixV3 then
 	        bodyPrefix = prefixV3;
 	        thisVersion = 3;
 
@@ -416,7 +861,6 @@ function GHU_Mail:AssembleTransfer(index)
         else
 	        return nil,"Loading GHI mail data...";
         end
-
 
 	    -- Every part of one transfer must use the same transport format.
 	    if transportVersion == nil then
@@ -434,19 +878,62 @@ function GHU_Mail:AssembleTransfer(index)
     end
 
 
-    -- First reconstruct exactly what was transported.
     local payload = table.concat(chunks,"");
 
 
-    -- Decode the transport format before parsing userBody/code.
-    if transportVersion == 3 then
+    -- GHIM4:
+    -- first character = compression flag
+    -- rest = mail-safe Base64 data
+    if transportVersion == 4 then
+
+	    if string.len(payload) < 2 then
+		    return nil,"GHI mail GHIM4 payload is corrupt.";
+	    end
+
+	    local compressedFlag =
+		    string.sub(payload,1,1);
+
+	    local encoded =
+		    string.sub(payload,2);
+
+	    local decoded =
+		    GHU_Base64Decode(encoded);
+
+	    if not decoded then
+		    return nil,"GHI mail Base64 data is corrupt.";
+	    end
+
+
+	    if compressedFlag == "1" then
+
+		    decoded = GHU_Decompress(decoded);
+
+		    if not decoded then
+			    return nil,"GHI mail compressed data is corrupt.";
+		    end
+
+	    elseif compressedFlag ~= "0" then
+
+		    return nil,"GHI mail compression flag is corrupt.";
+	    end
+
+
+	    payload = decoded;
+
+
+    -- GHIM3 compatibility.
+    elseif transportVersion == 3 then
+
 	    payload = GHU_MailHexDecode(payload);
 
 	    if not payload then
 		    return nil,"GHI mail hex data is corrupt.";
 	    end
 
+
+    -- GHIM2 compatibility.
     elseif transportVersion == 2 then
+
 	    payload = GHU_MailDecode(payload);
     end
 	local colon = string.find(payload,":",1,true);
@@ -783,7 +1270,7 @@ function GHU_Mail:BeginGHIItemSend()
 		GHU_MailMessage(err or "Could not prepare GHI item for mail.");
 		return true;
 	end
-
+--[[
     -- Construct the normal GHI payload first.
     local rawPayload = string.len(userBody)..":"..userBody..code;
 
@@ -792,7 +1279,79 @@ function GHU_Mail:BeginGHIItemSend()
     local payload = GHU_MailHexEncode(rawPayload);
 
 	local total = math.ceil(string.len(payload) / GHU_MAIL_CHUNK_SIZE);
-	if total < 1 then total = 1; end
+]]
+
+    -- Construct the original GHI mail payload.
+    local rawPayload =
+	    string.len(userBody)..":"..
+	    userBody..
+	    code;
+
+
+    -- GHIM4 always Base64-encodes the transport data.
+    local rawEncoded =
+	    GHU_Base64Encode(rawPayload);
+
+
+    -- Try compression first.
+    local compressed =
+	    GHU_Compress(rawPayload);
+
+    local compressedEncoded = nil;
+
+    if compressed then
+	    compressedEncoded =
+		    GHU_Base64Encode(compressed);
+    end
+
+
+    local payload;
+    local compressedFlag;
+
+
+    -- Use compression only when the FINAL Base64 representation
+    -- is actually smaller.
+    if compressedEncoded
+	    and string.len(compressedEncoded) < string.len(rawEncoded) then
+
+	    compressedFlag = "1";
+	    payload = compressedFlag..compressedEncoded;
+
+    else
+
+	    compressedFlag = "0";
+	    payload = compressedFlag..rawEncoded;
+    end
+
+    if compressedFlag == "1" then
+	    GHU_MailMessage(
+		    "GHIM4 compressed: "..
+		    string.len(rawPayload)..
+		    " bytes -> "..
+		    string.len(payload)..
+		    " transport characters."
+	    );
+    else
+	    GHU_MailMessage(
+		    "GHIM4 uncompressed: "..
+		    string.len(rawPayload)..
+		    " bytes -> "..
+		    string.len(payload)..
+		    " transport characters."
+	    );
+    end
+
+
+    -- Chunk the FINAL GHIM4 transport representation.
+    local total =
+	    math.ceil(
+		    string.len(payload) /
+		    GHU_MAIL_CHUNK_SIZE
+	    );
+
+    if total < 1 then
+	    total = 1;
+    end
 	if total > 50 then
 		GHU_MailMessage("This GHI item is too large to mail safely (more than 50 mail parts). Use trade or Export Item instead.");
 		return true;
