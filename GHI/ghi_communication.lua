@@ -119,10 +119,33 @@ function GHI:SendPrioritizedMessage(prio,channel,player,...)
     ghi5_send(channel,player,arg,prio);
 end
 function GHI_CommunicationHookings()
-    if this and this.RegisterEvent then
-        this:RegisterEvent("CHAT_MSG_ADDON");
-        this:RegisterEvent("CHAT_MSG_WHISPER");
-    end
+
+	-- Route GHI communication events through GHI's normal event dispatcher.
+	-- Merely registering CHAT_MSG_WHISPER is not enough; the received
+	-- whisper must actually be passed to GHI5_OnWhisperMessage().
+	if type(GHI_RegEvent) == "function" then
+
+		GHI_RegEvent("CHAT_MSG_ADDON",function()
+			if type(GHI5_OnAddonMessage) == "function" then
+				GHI5_OnAddonMessage(
+					arg1, -- prefix
+					arg2, -- message
+					arg3, -- distribution
+					arg4  -- sender
+				);
+			end
+		end);
+
+		GHI_RegEvent("CHAT_MSG_WHISPER",function()
+			if type(GHI5_OnWhisperMessage) == "function" then
+				GHI5_OnWhisperMessage(
+					arg1, -- whisper text
+					arg2  -- sender
+				);
+			end
+		end);
+
+	end
 end
 function GHI5_OnAddonMessage(prefix,text,distribution,sender)
     if prefix~="GHI5" then return; end
@@ -1308,4 +1331,3 @@ function GHI_MainMenuBarPerformanceBarFrame_OnEnter(f)
 end
 
 PERFORMANCEBAR_UPDATE_INTERVAL = 1;
-
