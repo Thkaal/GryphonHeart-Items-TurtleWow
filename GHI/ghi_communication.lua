@@ -1,13 +1,32 @@
 -- Turtle WoW native GHI communication layer (Lua 5.0 compatible)
+--
+-- Directed GHI traffic on WoW 1.12/TurtleWoW uses a dedicated custom
+-- chat channel named "GHI5".  The channel is joined but is deliberately
+-- never added to a chat frame, so normal GHI traffic remains out of the
+-- visible chat window.  Every directed packet contains its intended
+-- recipient; clients ignore packets addressed to another player.
+--
+-- Non-directed distributions (PARTY/RAID/GUILD/etc.) continue to use
+-- SendAddonMessage exactly as before.
+
 GHI = GHI or {};
 GHI.ownName = UnitName("player");
+
+local GHI5_CHANNEL_NAME = "GHI5";
+local GHI5_CHANNEL_MARK = "GHI5:";
+local GHI5_CHANNEL_ID = 0;
+local GHI5_CHANNEL_RETRY = 2;
+
 local GHI5_recv = {};
 local GHI5_seq = 0;
 local GHI5_eventFrame = nil;
+local GHI5_outQueue = {};
+local GHI5_nextJoinAttempt = 0;
 
 local function ghi5_count(t)
     local n=0; for _ in pairs(t) do n=n+1; end; return n;
 end
+
 local function ghi5_ser(v)
     local ty=type(v);
     if ty=="nil" then return "Z";
@@ -21,10 +40,12 @@ local function ghi5_ser(v)
     end
     return "Z";
 end
+
 local function ghi5_num(s,p)
     local c=string.find(s,":",p,true); if not c then return nil,p; end
     return tonumber(string.sub(s,p,c-1)),c+1;
 end
+
 local function ghi5_des(s,p)
     p=p or 1; local tag=string.sub(s,p,p); p=p+1;
     if tag=="Z" then return nil,p;
@@ -39,13 +60,10 @@ local function ghi5_des(s,p)
     end
     return nil,p;
 end
--- WoW 1.12 added SendAddonMessage, but addon WHISPER distribution did not
--- arrive until patch 2.1.  Directed GHI traffic therefore uses an ordinary
--- whisper transport on Turtle/Vanilla and hides the transport text in the
--- GHI chat handler.  The payload is hex encoded because SendChatMessage is
--- not binary safe.
-local GHI5_WHISPER_MARK = "GHI5:";
 
+-- The custom channel is ordinary chat transport, so the complete directed
+-- envelope is hex encoded.  This keeps GHI serialization bytes, WoW markup
+-- characters, delimiters and player names out of the visible wire format.
 local function ghi5_hex_encode(text)
     local out = {};
     local i;
@@ -56,6 +74,7 @@ local function ghi5_hex_encode(text)
 end
 
 local function ghi5_hex_decode(text)
+    if type(text) ~= "string" then return nil; end
     if math.mod(string.len(text),2) ~= 0 then return nil; end
     local out = {};
     local i;
@@ -67,122 +86,295 @@ local function ghi5_hex_decode(text)
     return table.concat(out);
 end
 
-function GHI5_IsPrivateWire(text)
-    return type(text)=="string" and string.sub(text,1,string.len(GHI5_WHISPER_MARK))==GHI5_WHISPER_MARK;
+-- TurtleRP protects its communication channel from the optional drunken-chat
+-- suffix.  GHI5's payload is hex, so the only remaining concern is a suffix
+-- appended after the encoded text.  Remove it exactly when present.
+local GHI5_DRUNK_SUFFIX = nil;
+if type(SLURRED_SPEECH) == "string" then
+    GHI5_DRUNK_SUFFIX = string.gsub(SLURRED_SPEECH,"%%s","",1);
+end
+
+local function ghi5_strip_drunk_suffix(text)
+    if type(text) ~= "string" then return text; end
+    if type(GHI5_DRUNK_SUFFIX) == "string" and GHI5_DRUNK_SUFFIX ~= "" then
+        local suffixLen = string.len(GHI5_DRUNK_SUFFIX);
+        if string.len(text) >= suffixLen and string.sub(text,-suffixLen) == GHI5_DRUNK_SUFFIX then
+            return string.sub(text,1,string.len(text)-suffixLen);
+        end
+    end
+    return text;
+end
+
+local function ghi5_get_channel_id()
+    local id = 0;
+    if type(GetChannelName) == "function" then
+        id = GetChannelName(GHI5_CHANNEL_NAME) or 0;
+    end
+    if type(id) ~= "number" then id = 0; end
+    if id < 0 then id = 0; end
+    GHI5_CHANNEL_ID = id;
+    return id;
+end
+
+local function ghi5_send_channel_wire(wire,prio)
+    local id = ghi5_get_channel_id();
+    if id <= 0 then return false; end
+
+    if ChatThrottleLib and type(ChatThrottleLib.SendChatMessage) == "function" then
+        ChatThrottleLib:SendChatMessage(
+            prio or "NORMAL",
+            GHI5_CHANNEL_NAME,
+            wire,
+            "CHANNEL",
+            nil,
+            id
+        );
+    elseif type(SendChatMessage) == "function" then
+        SendChatMessage(wire,"CHANNEL",nil,id);
+    else
+        return false;
+    end
+
+    return true;
+end
+
+local function ghi5_queue_channel_wire(wire,prio)
+    table.insert(GHI5_outQueue,{wire=wire,prio=prio});
+end
+
+local function ghi5_flush_channel_queue()
+    if ghi5_get_channel_id() <= 0 then return; end
+    if table.getn(GHI5_outQueue) <= 0 then return; end
+
+    local queue = GHI5_outQueue;
+    GHI5_outQueue = {};
+
+    local i;
+    for i=1,table.getn(queue) do
+        local entry = queue[i];
+        if entry and not ghi5_send_channel_wire(entry.wire,entry.prio) then
+            -- Channel became unavailable while flushing.  Put this and all
+            -- remaining packets back in order for the next retry.
+            local j;
+            for j=i,table.getn(queue) do
+                table.insert(GHI5_outQueue,queue[j]);
+            end
+            return;
+        end
+    end
+end
+
+local function ghi5_ensure_channel()
+    if ghi5_get_channel_id() > 0 then
+        ghi5_flush_channel_queue();
+        return true;
+    end
+
+    if type(JoinChannelByName) == "function" then
+        -- Deliberately do NOT call ChatFrame_AddChannel().
+        -- CHAT_MSG_CHANNEL still fires, but the GHI5 transport does not become
+        -- a normal visible chat channel.
+        JoinChannelByName(GHI5_CHANNEL_NAME);
+    end
+
+    return false;
 end
 
 local function ghi5_receive_wire(text,distribution,sender)
     if type(text)~="string" then return; end
     local _,_,id,pi,pt,data=string.find(text,"^([^:]+):(%d+):(%d+):(.*)$");
-    if not id then return; end; pi=tonumber(pi); pt=tonumber(pt);
-    local key=(sender or "?")..":"..id; local r=GHI5_recv[key];
-    if not r then r={n=pt,p={}}; GHI5_recv[key]=r; end; r.p[pi]=data;
-    local i; for i=1,r.n do if not r.p[i] then return; end; end
-    local all=table.concat(r.p); GHI5_recv[key]=nil; local args=ghi5_des(all,1);
-    if type(args)=="table" and GHI.ReceiveMessage then GHI:ReceiveMessage("GHI",sender,distribution,false,unpack(args)); end
+    if not id then return; end;
+
+    pi=tonumber(pi);
+    pt=tonumber(pt);
+    if not pi or not pt or pi < 1 or pt < 1 or pi > pt then return; end
+
+    local key=(sender or "?")..":"..id;
+    local r=GHI5_recv[key];
+    if not r then
+        r={n=pt,p={}};
+        GHI5_recv[key]=r;
+    elseif r.n ~= pt then
+        -- Same sender/id with contradictory part count: discard it.
+        GHI5_recv[key]=nil;
+        return;
+    end
+
+    r.p[pi]=data;
+
+    local i;
+    for i=1,r.n do
+        if not r.p[i] then return; end
+    end
+
+    local all=table.concat(r.p);
+    GHI5_recv[key]=nil;
+
+    local args=ghi5_des(all,1);
+    if type(args)=="table" and GHI.ReceiveMessage then
+        GHI:ReceiveMessage("GHI",sender,distribution,false,unpack(args));
+    end
 end
 
-local function ghi5_send_private_whisper(player,text,prio)
-	if not player or player == "" then
-		return;
-	end
+-- Directed GHI transport.  The envelope before hex encoding is:
+--     recipientName <0x01> multipartPacket
+-- Every GHI5 client receives the channel message, but only the named client
+-- decodes and dispatches the packet.
+local function ghi5_send_directed_channel(player,text,prio)
+    if not player or player=="" then return; end
 
-	local wire =
-		GHI5_WHISPER_MARK..
-		ghi5_hex_encode(text);
+    local envelope = tostring(player)..string.char(1)..text;
+    local wire = GHI5_CHANNEL_MARK..ghi5_hex_encode(envelope);
 
-	local send =
-		GHI_origSendChatMessage or
-		SendChatMessage;
-
-	if type(send) == "function" then
-		send(
-			wire,
-			"WHISPER",
-			nil,
-			player
-		);
-	end
+    if not ghi5_send_channel_wire(wire,prio) then
+        ghi5_queue_channel_wire(wire,prio);
+        ghi5_ensure_channel();
+    end
 end
 
 local function ghi5_send(channel,player,args,prio)
-    local payload=ghi5_ser(args); GHI5_seq=GHI5_seq+1;
+    local payload=ghi5_ser(args);
+    GHI5_seq=GHI5_seq+1;
+
     local id=tostring(math.floor(GetTime()*10)).."-"..tostring(GHI5_seq);
-    -- Private whispers are hex encoded, so keep chunks small enough to remain
-    -- comfortably under Vanilla's normal chat-message size limit.
+
+    -- Directed channel packets are hex encoded.  70 serialized bytes per part
+    -- keeps the final ordinary-chat message comfortably below Vanilla's
+    -- normal 255-character message limit, including recipient and headers.
     local chunk=(channel=="WHISPER") and 70 or 190;
-    local total=math.ceil(string.len(payload)/chunk); local i;
+    local total=math.ceil(string.len(payload)/chunk);
+    if total < 1 then total = 1; end
+
+    local i;
     for i=1,total do
         local part=string.sub(payload,(i-1)*chunk+1,i*chunk);
         local packet=id..":"..i..":"..total..":"..part;
+
         if channel=="WHISPER" then
-            ghi5_send_private_whisper(player,packet,prio);
+            ghi5_send_directed_channel(player,packet,prio);
         else
             SendAddonMessage("GHI5",packet,channel);
         end
     end
 end
+
 function GHI:SendMessage(channel,player,...)
     ghi5_send(channel,player,arg,"NORMAL");
 end
+
 function GHI:SendPrioritizedMessage(prio,channel,player,...)
     ghi5_send(channel,player,arg,prio);
 end
-function GHI_CommunicationHookings()
 
-	-- GHI5 owns its communication event frame directly.
-	-- This avoids depending on GHI's general event dispatcher for
-	-- private transport whispers.
-	if GHI5_eventFrame then
-		return;
-	end
-
-	local f = CreateFrame("Frame");
-
-	f:RegisterEvent("CHAT_MSG_WHISPER");
-	f:RegisterEvent("CHAT_MSG_ADDON");
-
-	f:SetScript("OnEvent",function()
-
-		if event == "CHAT_MSG_WHISPER" then
-
-			if type(GHI5_OnWhisperMessage) == "function" then
-				GHI5_OnWhisperMessage(
-					arg1, -- message text
-					arg2  -- sender
-				);
-			end
-
-
-		elseif event == "CHAT_MSG_ADDON" then
-
-			if type(GHI5_OnAddonMessage) == "function" then
-				GHI5_OnAddonMessage(
-					arg1, -- prefix
-					arg2, -- message
-					arg3, -- distribution
-					arg4  -- sender
-				);
-			end
-
-		end
-	end);
-
-	GHI5_eventFrame = f;
-end
 function GHI5_OnAddonMessage(prefix,text,distribution,sender)
     if prefix~="GHI5" then return; end
     ghi5_receive_wire(text,distribution,sender);
 end
-function GHI5_OnWhisperMessage(text,sender)
-    if not GHI5_IsPrivateWire(text) then return false; end
-    local encoded=string.sub(text,string.len(GHI5_WHISPER_MARK)+1);
-    local packet=ghi5_hex_decode(encoded);
-    if packet then ghi5_receive_wire(packet,"WHISPER",sender); end
+
+function GHI5_OnChannelMessage(text,sender,channelNumber,channelName)
+    local ownChannel = ghi5_get_channel_id();
+    local nameMatches = false;
+    local numberMatches = false;
+
+    if type(channelName) == "string" then
+        nameMatches = string.lower(channelName) == string.lower(GHI5_CHANNEL_NAME);
+    end
+    if tonumber(channelNumber) and ownChannel > 0 then
+        numberMatches = tonumber(channelNumber) == ownChannel;
+    end
+
+    if not nameMatches and not numberMatches then return false; end
+    if type(text) ~= "string" then return false; end
+    if string.sub(text,1,string.len(GHI5_CHANNEL_MARK)) ~= GHI5_CHANNEL_MARK then
+        return false;
+    end
+
+    local encoded = string.sub(text,string.len(GHI5_CHANNEL_MARK)+1);
+    encoded = ghi5_strip_drunk_suffix(encoded);
+
+    local envelope = ghi5_hex_decode(encoded);
+    if not envelope then return true; end
+
+    local separator = string.find(envelope,string.char(1),1,true);
+    if not separator then return true; end
+
+    local target = string.sub(envelope,1,separator-1);
+    local packet = string.sub(envelope,separator+1);
+    local ownName = UnitName("player") or GHI.ownName or "";
+
+    if string.lower(target or "") ~= string.lower(ownName) then
+        return true;
+    end
+
+    ghi5_receive_wire(packet,"WHISPER",sender);
     return true;
 end
+
+function GHI_CommunicationHookings()
+    if GHI5_eventFrame then return; end
+
+    local f = CreateFrame("Frame","GHI5CommunicationFrame");
+    f:RegisterEvent("PLAYER_ENTERING_WORLD");
+    f:RegisterEvent("CHAT_MSG_CHANNEL");
+    f:RegisterEvent("CHAT_MSG_CHANNEL_NOTICE");
+    f:RegisterEvent("CHAT_MSG_ADDON");
+
+    f:SetScript("OnEvent",function()
+        if event == "PLAYER_ENTERING_WORLD" then
+            GHI5_CHANNEL_ID = 0;
+            GHI5_nextJoinAttempt = 0;
+            ghi5_ensure_channel();
+
+        elseif event == "CHAT_MSG_CHANNEL_NOTICE" then
+            -- Join/leave notifications are asynchronous.  Re-read the channel
+            -- list after every notice and flush anything that was waiting.
+            if ghi5_get_channel_id() > 0 then
+                ghi5_flush_channel_queue();
+            else
+                GHI5_nextJoinAttempt = 0;
+            end
+
+        elseif event == "CHAT_MSG_CHANNEL" then
+            GHI5_OnChannelMessage(
+                arg1, -- message
+                arg2, -- sender
+                arg8, -- channel number
+                arg9  -- channel name
+            );
+
+        elseif event == "CHAT_MSG_ADDON" then
+            GHI5_OnAddonMessage(
+                arg1, -- prefix
+                arg2, -- message
+                arg3, -- distribution
+                arg4  -- sender
+            );
+        end
+    end);
+
+    -- GHI_OnLoad can run before the character is fully ready to join a
+    -- channel.  Retry quietly until the GHI5 channel exists, then this update
+    -- handler does almost nothing except an inexpensive id check.
+    f:SetScript("OnUpdate",function()
+        local now = GetTime();
+        if ghi5_get_channel_id() <= 0 then
+            if now >= GHI5_nextJoinAttempt then
+                GHI5_nextJoinAttempt = now + GHI5_CHANNEL_RETRY;
+                ghi5_ensure_channel();
+            end
+        elseif table.getn(GHI5_outQueue) > 0 then
+            ghi5_flush_channel_queue();
+        end
+    end);
+
+    GHI5_eventFrame = f;
+    ghi5_ensure_channel();
+end
+
+-- Kept because other GHI code may feed already-reassembled addon packets into
+-- this entry point.  It is not a legacy whisper transport.
 function GHI:RecieveRawMessage(prefix,text,distribution,sender)
-    GHI5_OnAddonMessage("GHI5",text,distribution,sender);
+    ghi5_receive_wire(text,distribution,sender);
 end
 
 local recieveFunctions = {};
