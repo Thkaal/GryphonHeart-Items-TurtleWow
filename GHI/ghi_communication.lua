@@ -214,6 +214,12 @@ local function ghi5_ensure_channel()
     if type(JoinChannelByName) == "function" then
         local frameID = 1;
 
+        if DEFAULT_CHAT_FRAME
+            and DEFAULT_CHAT_FRAME.GetID then
+
+            frameID = DEFAULT_CHAT_FRAME:GetID();
+        end
+
         JoinChannelByName(
             GHI5_CHANNEL_NAME,
             "",
