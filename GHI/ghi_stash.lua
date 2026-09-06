@@ -15,7 +15,7 @@ GHI_Stash.transportPrefix = "GHUS1";
 GHI_Stash.transportSerial = 0;
 
 GHI_Stash.transportChunkSize = 180;
-GHI_Stash.transportSendDelay = 0.20;
+GHI_Stash.transportSendDelay = 0.75;
 GHI_Stash.transportSendElapsed = 0;
 
 GHI_Stash.transportSendQueue = {};
@@ -2097,28 +2097,22 @@ function GHI_Stash:FinishZoneReconciliation()
 		return;
 	end
 
-	if syncType == "priority" then
-		if not self.cycleActive then
-			self:StartZoneCycle();
-		else
-			self.cyclePaused = false;
-			self:ContinueZoneCycle();
-		end
+    if syncType == "priority" then
+	    --
+	    -- Do not immediately begin a world-wide
+	    -- background reconciliation cycle.
+	    -- Live SDAT broadcasts continue normally.
+	    --
+	    self.cyclePaused = false;
 
-		return;
-	end
+	    return;
+    end
 
-	if syncType == "cycle" then
-		self.cycleIndex = self.cycleIndex + 1;
-
-		if self.cycleIndex >
-			table.getn(self.cycleZones) then
-
-			self.cycleIndex = 1;
-		end
-
-		self:ContinueZoneCycle();
-	end
+    if syncType == "cycle" then
+	    self.cycleActive = false;
+	    self.cyclePaused = false;
+	    return;
+    end
 end
 
 function GHI_Stash:BeginZoneReconciliation(

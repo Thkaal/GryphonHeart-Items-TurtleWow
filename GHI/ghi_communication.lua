@@ -221,6 +221,7 @@ local function ghi5_ensure_channel()
     return false;
 end
 
+
 local function ghi5_receive_wire(text,distribution,sender)
     if type(text)~="string" then return; end
     local _,_,id,pi,pt,data=string.find(text,"^([^:]+):(%d+):(%d+):(.*)$");
@@ -1629,4 +1630,10 @@ function GHI_MainMenuBarPerformanceBarFrame_OnEnter(f)
 end
 
 PERFORMANCEBAR_UPDATE_INTERVAL = 1;
+
+-- Ensure the TurtleWoW GHI5 transport is initialized even if the
+-- original GHI startup path does not call GHI_CommunicationHookings().
+if type(GHI_CommunicationHookings) == "function" then
+	GHI_CommunicationHookings();
+end
 
