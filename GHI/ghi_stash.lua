@@ -50,8 +50,8 @@ GHI_Stash.pendingStashRequests = {};
 -- How close the player must be to interact with a stash.
 -- Coordinates run from 0.0 to 1.0, so 0.005 is roughly
 -- half of one percent of the zone map.
-GHI_Stash.searchTolerance = 0.010;
-GHI_Stash.locationTolerance = 0.001;
+GHI_Stash.searchTolerance = 0.006;
+GHI_Stash.locationTolerance = 0.002;
 
 function GHI_Stash:AddMessage(message)
 	local chatFrame = SELECTED_CHAT_FRAME or DEFAULT_CHAT_FRAME;
