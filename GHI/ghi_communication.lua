@@ -212,10 +212,19 @@ local function ghi5_ensure_channel()
     end
 
     if type(JoinChannelByName) == "function" then
-        -- Deliberately do NOT call ChatFrame_AddChannel().
-        -- CHAT_MSG_CHANNEL still fires, but the GHI5 transport does not become
-        -- a normal visible chat channel.
-        JoinChannelByName(GHI5_CHANNEL_NAME);
+        local frameID = 1;
+
+        if DEFAULT_CHAT_FRAME
+            and DEFAULT_CHAT_FRAME.GetID then
+
+            frameID = DEFAULT_CHAT_FRAME:GetID();
+        end
+
+        JoinChannelByName(
+            GHI5_CHANNEL_NAME,
+            "",
+            frameID
+        );
     end
 
     return false;
@@ -402,8 +411,6 @@ function GHI_CommunicationHookings()
             ghi5_ensure_channel();
 
         elseif event == "CHAT_MSG_CHANNEL_NOTICE" then
-            -- Join/leave notifications are asynchronous.  Re-read the channel
-            -- list after every notice and flush anything that was waiting.
             if ghi5_get_channel_id() > 0 then
                 ghi5_flush_channel_queue();
             else
@@ -1636,4 +1643,3 @@ PERFORMANCEBAR_UPDATE_INTERVAL = 1;
 if type(GHI_CommunicationHookings) == "function" then
 	GHI_CommunicationHookings();
 end
-
