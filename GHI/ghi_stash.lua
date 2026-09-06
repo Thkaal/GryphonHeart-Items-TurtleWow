@@ -50,8 +50,8 @@ GHI_Stash.pendingStashRequests = {};
 -- How close the player must be to interact with a stash.
 -- Coordinates run from 0.0 to 1.0, so 0.005 is roughly
 -- half of one percent of the zone map.
-GHI_Stash.searchTolerance = 0.015;
-GHI_Stash.locationTolerance = 0.005;
+GHI_Stash.searchTolerance = 0.010;
+GHI_Stash.locationTolerance = 0.001;
 
 function GHI_Stash:AddMessage(message)
 	local chatFrame = SELECTED_CHAT_FRAME or DEFAULT_CHAT_FRAME;
@@ -1049,6 +1049,7 @@ function GHI_Stash:CreateBagFrame()
 	end
 
 	local frame = CreateFrame("Frame", "GHI_StashBagFrame", UIParent);
+    table.insert(UISpecialFrames, "GHI_StashBagFrame");
 	frame:SetWidth(220);
 	frame:SetHeight(255);
 	frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0);
@@ -1057,6 +1058,10 @@ function GHI_Stash:CreateBagFrame()
 	frame:EnableMouse(true);
 	frame:RegisterForDrag("LeftButton");
 	frame:Hide();
+
+	frame:SetScript("OnHide", function()
+		GHI_Stash:UnbindGHIContainer();
+	end);
 
 	frame:SetBackdrop({
 		bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
